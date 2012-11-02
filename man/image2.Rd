@@ -3,15 +3,25 @@
 \alias{make_legend}
 \title{Improved image() function}
 \usage{
-image2(z, col = NULL, axes = FALSE, legend = TRUE, xlab = "", ylab = "", zlim = NULL, 
-    density = FALSE, max.height = NULL, zlim.label = "color scale", ...)
+image2(x = NULL, y = NULL, z = NULL, col = NULL, axes = FALSE, legend = TRUE, 
+    xlab = "", ylab = "", zlim = NULL, density = FALSE, max.height = NULL, zlim.label = "color scale", 
+    ...)
 
 make_legend(data = NULL, col = NULL, side = 1, zlim = NULL, col.ticks = NULL, 
     cex.axis = 2, max.height = 1, col.label = "")
 }
 \arguments{
+  \item{x,y}{locations of grid lines at which the values in
+  z are measured. These must be finite, non-missing and in
+  (strictly) ascending order. By default, equally spaced
+  values from 0 to 1 are used. If x is a list, its
+  components \code{x$x} and \code{x$y} are used for
+  \code{x} and \code{y}, respectively. If the list has
+  component \code{z} this is used for \code{z}.}
+
   \item{z}{a matrix containing the values to be plotted
-  (NAs are allowed).}
+  (NAs are allowed). Note that \code{x} can be used instead
+  of \code{z} for convenience.}
 
   \item{col}{colors: either a string decribing a pallette
   from the \code{RColorBrewer} package (see also
@@ -77,17 +87,22 @@ make_legend(data = NULL, col = NULL, side = 1, zlim = NULL, col.ticks = NULL,
 }
 \examples{
 \dontrun{
-# Correlation matrix has diagonal correctly
-data(iris)
-image(cor(as.matrix(iris[, -1])))
-image2(cor(as.matrix(iris[, -1])), col = "RdBu")
+# Correlation matrix
+data(iris)  # make sure its from 'datasets' package, not from 'locfit'
+image(cor(as.matrix(iris[, names(iris) != "Species"])))
+
+# Correlation matrix has diagonal from top left to bottom right
+par(mar = c(1, 3, 1, 2))
+image2(cor(as.matrix(iris[, names(iris) != "Species"])), col = "RdBu", axes = FALSE)
 }
 # Color histogram
-nn <- 100
+nn <- 10
 set.seed(nn)
-AA <- matrix(sample(c(rnorm(nn^2/2, -1, 0.1), rexp(nn^2/2, 1))), ncol = nn)
+AA <- matrix(sample(c(rnorm(nn^2, -1, 0.1), rexp(nn^2/2, 0.5))), ncol = nn)
 
-image2(AA, col = "Spectral", density = TRUE)
+image2(AA, col = "Spectral")
+image2(y = 1:15 + 2, x = 1:10, AA, col = "Spectral", axes = TRUE)
+image2(y = 1:15 + 2, x = 1:10, AA, col = "Spectral", density = TRUE, axes = TRUE)
 
 image2(AA, col = "Spectral", density = TRUE, zlim = c(min(AA), 3))
 }

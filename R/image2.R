@@ -15,7 +15,13 @@
 #' which can be used to refine the display of a matrix by trimming outliers (as 
 #' they can often distort the color representation).
 #'
-#' @param z a matrix containing the values to be plotted (NAs are allowed).
+#' @param x,y locations of grid lines at which the values in z are measured. 
+#' These must be finite, non-missing and in (strictly) ascending order. 
+#' By default, equally spaced values from 0 to 1 are used. If x is a list, 
+#' its components \code{x$x} and \code{x$y} are used for \code{x} and \code{y}, 
+#' respectively. If the list has component \code{z} this is used for \code{z}.
+#' @param z a matrix containing the values to be plotted (NAs are allowed). 
+#' Note that \code{x} can be used instead of \code{z} for convenience.
 #' @param col colors: either a string decribing a pallette from the 
 #' \code{RColorBrewer} package (see also \url{http://colorbrewer2.org/}), or a list of colors 
 #' (see \code{\link[graphics]{image}} for suggestions).
@@ -39,38 +45,56 @@
 #' @examples
 #' 
 #' \dontrun{
-#' # Correlation matrix has diagonal correctly
-#' data(iris)
-#' image(cor(as.matrix(iris[,-1])))
-#' image2(cor(as.matrix(iris[,-1])), col = "RdBu")
+#' # Correlation matrix
+#' data(iris) # make sure its from 'datasets' package, not from 'locfit'
+#' image(cor(as.matrix(iris[,names(iris)!="Species"])))
+#' 
+#' # Correlation matrix has diagonal from top left to bottom right
+#' par(mar = c(1, 3, 1, 2))
+#' image2(cor(as.matrix(iris[,names(iris)!="Species"])), col = "RdBu", axes = FALSE)
 #' }
 #' # Color histogram
-#' nn <- 100
+#' nn <- 10
 #' set.seed(nn)
-#' AA <- matrix(sample(c(rnorm(nn^2/2, -1, .1), rexp(nn^2/2, 1))), ncol = nn)
+#' AA <- matrix(sample(c(rnorm(nn^2, -1, .1), rexp(nn^2/2, .5))), ncol = nn)
 #' 
-#' image2(AA, col = "Spectral", density = TRUE)
+#' image2(AA, col = "Spectral")
+#' image2(y = 1:15+2, x = 1:10, AA, col = "Spectral", axes = TRUE)
+#' image2(y = 1:15+2, x = 1:10, AA, col = "Spectral", density = TRUE, axes = TRUE)
 #' 
 #' image2(AA, col = "Spectral", density = TRUE, zlim = c(min(AA), 3))
 #' 
-#' 
 
-image2 <- function(z, col = NULL, 
+image2 <- function(x=NULL, y=NULL, z=NULL, col = NULL, 
                    axes = FALSE, legend = TRUE, xlab="", ylab = "", 
                    zlim = NULL, density = FALSE, max.height = NULL, 
                    zlim.label = "color scale", ...){
   
-   zz <- z  
-   zz[is.na(zz)] = min(zz, na.rm=TRUE)
-   min <- min(zz)
-   max <- max(zz)
-   yLabels <- rownames(zz)
-   xLabels <- colnames(zz)
-   title <-c()
-   if (!is.null(zlim)){
-     min = zlim[1]
-     max = zlim[2]
-   }
+  zz <- z
+  xx <- x
+  yy <- y
+  
+  if (is.null(zz) & is.null(xx)){
+    stop("You must provide the matrix to be plotted. Either as 'z' or as 'x'.")
+  }
+  
+  if (is.null(zz) & !is.null(xx)){
+    zz <- xx
+    xx <- NULL
+  }
+  
+  op <- par(no.readonly = TRUE)
+  
+  zz[is.na(zz)] = min(zz, na.rm=TRUE)
+  min <- min(zz)
+  max <- max(zz)
+  yLabels <- rownames(zz)
+  xLabels <- colnames(zz)
+  title <-c()
+  if (!is.null(zlim)){
+   min = zlim[1]
+   max = zlim[2]
+  }
   # check for additional function arguments
   if( length(list(...)) ){
     Lst <- list(...)
@@ -88,12 +112,29 @@ image2 <- function(z, col = NULL,
        title <- Lst$title
     }
   }
+  
   # check for null values
-  if( is.null(xLabels) ){
-    xLabels <- pretty(1:ncol(zz))
+  if (!is.null(xx)){
+    xLabels <- pretty(xx, n = min(5, length(xx)))
   }
-  if( is.null(yLabels) ){
-    yLabels <- pretty(1:nrow(zz))
+  
+  if (!is.null(yy)){
+    yLabels <- pretty(yy, n = min(5, length(yy)))
+  }
+  
+  
+  if (is.null(xx)){
+    xx <- 1:ncol(zz)
+  }
+  if (is.null(yy)){
+    yy <- 1:nrow(zz)
+  }  
+  
+  if ( is.null(xLabels) ){
+    xLabels <- pretty(xx, n = min(5, length(xx)))
+  }
+  if ( is.null(yLabels) ){
+    yLabels <- pretty(yy, n = min(5, length(yy)))
   }
   
   # Red and green range from 0 to 1 while Blue ranges from 1 to 0
@@ -118,42 +159,54 @@ image2 <- function(z, col = NULL,
     } else {
       layout(matrix(data=c(1,2), ncol=2), widths=c(9,2))
     }
-    par(mar = c(1,1,2,1), cex.lab = 2, cex.axis = 2, lwd = 2)
+    ## par(mar = c(1,1,2,1), cex.lab = 2, cex.axis = 2, lwd = 2)  # change only inside new plot
   }
   
+
+  
+  par_user = par()
   # par(mar = rep(0.5, 4), cex.lab = 2, cex.axis = 2, lwd = 2)
-  image(1:ncol(zz), 1:nrow(zz), t(zz), col=col, axes=FALSE, zlim=c(min,max), xlab = xlab, ylab = ylab, ...) 
+
+  #image(1:ncol(zz), 1:nrow(zz), t(zz), col=col, axes=FALSE, zlim=c(min,max), xlab = xlab, ylab = ylab, ...) 
+  image(x = xx, y = yy, z = t(zz), col=col, axes=FALSE, zlim=c(min,max), xlab = xlab, ylab = ylab, ...)
+  
   box()
   if( !is.null(title) ){
    title(main=title)
   }
   if (axes) {
-    axis(1, at=xLabels, labels=xLabels, cex.axis=2)
-    axis(2, at=yLabels, labels=yLabels, las=1, cex.axis=2)
+    axis(3, at=xLabels, labels=xLabels, cex.axis=2)
+    axis(2, at=yLabels, labels=rev(yLabels), las=1, cex.axis=2)
   }
   
   
   if (legend) {
     # Color Scale
     if (density) {
-      temp.pdf = density(zz)
+      if (is.null(zlim)){
+        temp.pdf = density(zz)
+      } else {
+        temp.pdf = density(zz, from = zlim[1], to = zlim[2])
+      }
       if (is.null(max.height)) {
         max.height = max(temp.pdf$y)*1.05
       }
-      par(cex.lab = 2, cex.axis = 2, lwd = 2, mar = c(3,2.5,0,3))
+      par(mar = c(3, par_user$mar[2], 0.5, par_user$mar[4]))
+      #par(cex.lab = 2, cex.axis = 2, lwd = 2, mar = c(3,2.5,0,3))
       make_legend(data=zz, col = col, side = 1, zlim = c(min, max), 
                     col.ticks = pretty(temp.pdf$x, n = 6), cex.axis = 1.25, max.height = max.height )
-      #legend("topright", col = "black", "frequency", lty = 1, lwd = 2, bty = "n", cex = 1.25)
+
       mtext(zlim.label, side = 1, line = 2, cex = 1.25)
       lines(temp.pdf, lwd = 2)
       axis(4, at = c(0, max.height/2, max.height), labels = c("0", paste(round(c(0.5, 1)* max.height, 1))) , cex.axis = 1.25)
       mtext("density", side = 2, line = 0.5, cex = 1.25)
-      
-      #mtext("bits", side = 1, line = 2, cex = 1.25)
-      } else {
-        par(cex.lab = 2, cex.axis = 2, lwd = 2, mar = c(1,1,2,4), las = 2)
-        make_legend(data = zz, col = col, side = 4, zlim = zlim)
-      }
+    } else {
+      #print(par_user)
+      par(mar = c(par_user$mar[1],0.5,par_user$mar[3],4), las = 2)
+      #par(cex.lab = 2, cex.axis = 2, lwd = 2, mar = c(1,1,2,4), las = 2)
+      make_legend(data = zz, col = col, side = 4, zlim = zlim)
+    }
+    par(op)
   }
 }
 
@@ -182,8 +235,6 @@ make_legend <- function(data = NULL, col = NULL, side = 1,
 
   if (is.null(col.ticks)) {
     col.ticks <- pretty(color_levels)
-    # col.ticks = c(floor(min*10)/10, pretty(color_levels), ceiling(max*10)/10)
-    # col.ticks = unique(col.ticks)
   }
   
   if (any(side == c(1, 3))) {
@@ -200,6 +251,5 @@ make_legend <- function(data = NULL, col = NULL, side = 1,
   axis(side = side, at = col.ticks, labels = paste(col.ticks), cex.axis = cex.axis, 
        col = "black")
   mtext(col.label, side = side, line = 3, cex = 0.75 * cex.axis)
-  # axis(side = side+1)
   box()
 } 

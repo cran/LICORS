@@ -43,9 +43,6 @@ predict_FLC_given_PLC <- function(state_vector = NULL,
   weight_matrix_test <- weight_matrix_test[, unique_train_states]
   
   FLC_train <- cbind(FLC_train)
-  
-  
-  
   pred_states_train <- rep(NA, nstates)
   
   # estimate pred_tests from the training data
@@ -63,12 +60,7 @@ predict_FLC_given_PLC <- function(state_vector = NULL,
   if (type == "mode") {
     pred_states_train <- FLC_train[apply(FLCs_train_pdf, 2, which.max)]
   }
-  
-  #print(pred_states_train)
-  
-  
   # make pred_tests for test data by weighting with weight matrix
-  
   if (type == "weightedmean") {
     pred_test <- rowSums(sweep(weight_matrix_test, 2, pred_states_train, "*"))
   } else {
@@ -76,6 +68,5 @@ predict_FLC_given_PLC <- function(state_vector = NULL,
       pred_test[state_vector_test == unique_train_states[ii]] <- pred_states_train[ii]
     }
   }
-  # print(pred_states_train)
   invisible(pred_test)
 } 

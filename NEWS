@@ -1,0 +1,22 @@
+		 CHANGES IN LICORS VERSION 0.1.1
+
+NEW FEATURES
+
+  - `data2LCs()` got an additional return argument specifying the original
+  dimension of the (input) field.  This can then be used in other functions
+  to reconstruct the field/state space given the estimates for i=1,...,N 
+
+BUG FIXES
+
+  - examples in `merge_states()` raised error in the CRAN Windows check
+  since it called `dev.off()`.  Removed this line of code (and also removed
+  `dev.off()` and some `par(op)` in other example code.
+  
+		 CHANGES IN LICORS VERSION 0.1
+
+NEW FEATURES
+
+  - first version of LICORS: its main functionality is the mixed LICORS EM algorithm (`mixed_LICORS()`) along
+  with summary and plotting functions.
+  Furthermore it includes several functions for data preparation and light cone model setup, as well as 
+  utility functions to handle space-time coordinates.

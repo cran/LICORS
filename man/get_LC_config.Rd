@@ -24,9 +24,9 @@ get_LC_config(coord, field = NULL, LC_coords = NULL)
 \examples{
 AA <- matrix(rnorm(40), ncol = 5)
 image2(AA)
-LCind <- compute_LC_coords(speed = 1, horizon = 2, shape = "cone")
+LCind <- compute_LC_coords(speed = 1, horizon = 1, shape = "cone")
 AA
-get_LC_config(c(2, 5), AA, LCind)
+get_LC_config(c(5, 2), AA, LCind)
 }
 \seealso{
   \code{\link{compute_LC_coords}}

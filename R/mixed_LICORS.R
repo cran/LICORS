@@ -47,20 +47,21 @@
 #' data(contCA00)
 #'  
 #' LC_geom = setup_LC_geometry(speed=1, horizon=list(PLC = 2, FLC = 0), shape ="cone")
-#' bb = data2LCs(contCA00$observed, LC_coords = LC_geom$coords)
+#' bb = data2LCs(t(contCA00$observed), LC_coords = LC_geom$coords)
 #' 
 #' mm = mixed_LICORS(bb, nstates_start = 10, init = "KmeansPLC", max_iter = 20)
 #' plot(mm)
-#' ff_new = estimate_LC_pdfs(bb$FLC, weight_matrix = mm$conditional_state_probs, method = "nonparametric")
+#' ff_new = estimate_LC_pdfs(bb$FLC, weight_matrix = mm$conditional_state_probs, 
+#'                           method = "nonparametric")
 #' matplot(bb$FLC, ff_new, pch = ".", cex = 2)
 #'}
 #'
 
 mixed_LICORS <-
-function(LCs = list(PLC = PLCs, FLC = FLCs), 
+function(LCs = list(PLC = PLCs, FLC = FLCs, dim = list(original = NULL, truncated = NULL)),
          nstates_start=NULL,
          initialization=NULL, max_iter=500, 
-         method=list(PLC = "normal", FLC= "nonparametric"), 
+         method=list(PLC = "normal", FLC = "nonparametric"), 
          alpha=0.01, 
          seed=NULL, verbose=TRUE, CV_train_ratio = 0.75, 
          CV_split_random = FALSE, 
@@ -70,6 +71,12 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
   
   FLCs = LCs$FLC
   PLCs = LCs$PLC
+  NN = nrow(PLCs)
+  
+  if (is.null(LCs$dim)){
+    LCs$dim = list(original = NULL, truncated = c(1, NN))  
+  }
+  
   
   if (is.null(seed)){
     seed = sample.int(10^6, 1)
@@ -83,9 +90,6 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
          - or a matrix with the initial weights_
          ")
   }
-  
-  #print(dim(PLCs))
-  NN = nrow(PLCs)
   state_vector = rep(NA, NN)
   
   if (CV_split_random){
@@ -244,13 +248,6 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
   MSE_test[1] = loss(FLC_test, predictions_test)
   MSE_test_weighted[1] = loss(FLC_test, predictions_test_weighted)
   
-  
-  #FLC_pdfs_train = estimate_LC_pdfs(FLC_train, 
-  #                                               state_vector = NULL, #state_vector_train,
-  #                                               method=method[["FLC"]],
-  #                                               weight_matrix = weights_train_temp)
-  
-  
   loglik_train_weighted[1] = compute_LICORS_loglik(FLC_pdfs_train, weights_train_temp, lambda = lambda)
   loglik_train[1] = loglik_train_weighted[1]
   loglik_train_weighted_only_update[1] = loglik_train_weighted[1]
@@ -267,12 +264,10 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
                                                               nstates_total = nstates_start), 
                                          lambda = lambda)
   
-  #state_vector_final = state_vector_train
   weights_final = weights_train_temp
   prediction_final = predictions_test
   nstates_final = nstates_start
   
-  #state_vector_best = state_vector_train
   weights_best = weights_train_temp
   prediction_best = predictions_test
   prediction_best_weighted = predictions_test
@@ -295,14 +290,7 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
     effective_nsamples = colSums(weights_train_temp)
     min_nsamples_per_state = ncol(PLC_train) + 1
     
-    #if (any(effective_nsamples < min_nsamples_per_state)){
-    #  cat("Reassign low numbered states \n")
-    #  weights_train_temp = remove_small_sample_states(weights_train_temp, min_nsamples_per_state)
-    #  merged = TRUE
-    #}
-    
-    # E step
-    
+    # E step  
     weights_train_temp = estimate_state_probs(weight_matrix = weights_train_temp,
                                               state_vector = NULL, 
                                               PLC_pdfs = PLC_pdfs_train, 
@@ -323,13 +311,6 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
       }
     }
 
-    #effective_nsamples = colSums(weights_train_temp)
-    
-    #if (any(effective_nsamples < min_nsamples_per_state)) {
-	 #     weights_train_temp = remove_small_sample_states(weights_train_temp, min_nsamples_per_state)$matrix
-  #      merged = TRUE
-   # }  
-
     if (merged) {
       PLC_pdfs_train = estimate_LC_pdfs(LCs = PLC_train, 
                                         weight_matrix = weights_train_temp,
@@ -349,14 +330,9 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
                                                 nstates_total = ncol(FLC_pdfs_train))
     }
     
-    #print(loglik_train_weighted[1:ii])
-    #print(all( rowMeans( (weights_train_temp - weights_final)^2 )  < 10^(-2) ) )
-    #print( any(loglik_train_weighted[ii-1]==loglik_train_weighted[5:(ii-2)]) )
-
     if (!merged){
       # maximum weight difference
       max_weight_diff = max( sqrt( rowMeans( (weights_train_temp - weights_final)^2 ) ) )
-      #cat("Max weight diff", round(max_weight_diff, 4), "\n")
     } else {
       max_weight_diff = 1
     }
@@ -368,7 +344,6 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
     if (temp_converged) {
       temp_merge = TRUE
       if (any("deterministic" == sparsity) && lambda != 0){
-        #temp_converged = FALSE
         temp_merge = FALSE
         temp_old_penalty = penalty[ii-1,"entropy"]
         if (verbose){
@@ -425,8 +400,7 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
                                           alpha = NULL, 
                                           distance = function(f,g) {
                                             return(mean(abs(f-g))) })
-        #AA = 1 / AA # for norm
-        #diag(AA) = max(AA)+1 # for norm
+        
         diag(AA) = 0 # for norm and testing (similarity)
         # if EM converged, and no merging is possible, then stop the iterations
         if (all(AA < alpha)){
@@ -435,11 +409,6 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
         } else {
           merged = TRUE
           merging_times = c(merging_times, ii)
-          # if merging is possible, merge only one and move on
-          #temp = LICORS_merge(NULL, AA, alpha = alpha, one.only = TRUE, weights_train_temp)
-          #weights_train_temp = temp$weight_matrix
-          #weights_train_temp = normalize(weights_train_temp)
-          #rm(temp)
           weights_train_temp = merge_states(which(AA == max(AA), arr.ind = TRUE)[1:2],
                                                 weights_train_temp)
           
@@ -461,8 +430,7 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
                                       state_vector = NULL, #state_vector_train,
                                       method=method[["FLC"]])    
     
-    #loglik_train_weighted_only_update[ii] = compute_LICORS_loglik(FLC_pdfs_train, weights_train_temp)
-    
+
     loglik_train_weighted_only_update[ii] = compute_LICORS_loglik(FLC_pdfs_train, 
                                                                   weights_train_temp, 
                                                                   lambda = lambda)
@@ -470,9 +438,7 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
     nstates_temp = ncol(weights_train_temp)
     
     
-    # evalue in-sample MSE
-
-    
+    # evaluate in-sample MSE    
     predictions_train = predict_FLC_given_PLC(state_vector = NULL, 
                                               FLC_train = FLC_train, 
                                               FLCs_train_pdf = NULL,
@@ -551,12 +517,13 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
       if (!merged){
         cat("Maximum difference in weights:", round(max_weight_diff, 4), "\n")
       } else {
-  	  cat("Weights have been merged \n")
+  	    cat("Weights have been merged \n")
       }
       cat("In-sample MSE:", MSE_train[ii], "\n" )
       cat("Weighted In-sample MSE:", MSE_train_weighted[ii], "\n" )
-      cat("Weighted Out-of-sample MSE:", MSE_test_weighted[ii], "\n" )
-      cat("In sample R^2:", round( 100* (1- MSE_train_weighted[ii] / var(FLC_train)),1), "%\n \n")
+      cat("Out-of-sample MSE:", MSE_test[ii], "\n" )
+      cat("Weighted Out-of-sample MSE:", MSE_test_weighted[ii], "\n \n" )
+      cat("In sample 'R^2':", round( 100* (1- MSE_train_weighted[ii] / var(FLC_train)),1), "%\n \n")
     }
     
     weights_final = weights_train_temp
@@ -653,12 +620,6 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
                                                         type = "median", 
                                                         weight_matrix_train = weights_best)
   
-  #out$theta_mode_train = predict_FLC_given_PLC(state_vector = NULL, 
-  #                                             FLC_train = FLC_train, 
-  #                                             FLCs_train_pdf = NULL,
-  #                                             type = "mode", 
-  #                                             weight_matrix_train = weights_best)
-  
   out$theta_final = rep(NA, nrow(FLCs))
   out$theta_final[-sel_train] = pred_state_test_final
   out$theta_final[sel_train] = weight_matrix2states(weights_final)
@@ -707,7 +668,6 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
   out$penalty = penalty
   
   out$alpha = alpha
-  #out$merging = merging
   out$merging_times = merging_times
   out$nmerges = length(out$merging_times)
   out$CV_split_random = CV_split_random
@@ -717,6 +677,7 @@ function(LCs = list(PLC = PLCs, FLC = FLCs),
   out$lambda = lambda
   out$seed = seed
   out$converged = overall_converged
+  out$dim = LCs$dim
   class(out) = c("LICORS", "mixed_LICORS")
   
   invisible(out)

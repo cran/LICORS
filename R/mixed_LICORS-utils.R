@@ -40,10 +40,9 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
                          cex.main = 2, line = 1.5, ...){
   out = x
   op = par(no.readonly=TRUE)
-  dev.off()
+  #dev.off()
   if (type == "train"){
     state_probs_matrix = out$conditional_state_probs[out$sel_train,]
-    #state_probs = out$pi
     loglik = out$loglik_trace[, c("train", "train weighted")][1:out$niter['final'],]
     mse = out$MSE_trace[, c("train", "train weighted")][1:out$niter['final'],]
   } else if (type == "test"){
@@ -52,7 +51,6 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
     mse = out$MSE_trace[, c("test", "test weighted")][1:out$niter['final'],]
   } else {
     state_probs_matrix = out$conditional_state_probs
-    #state_probs = LICORS_pi_eps(out$theta)
     loglik = out$loglik_trace[1:out$niter['final'],]
     mse = out$MSE_trace[1:out$niter['final'],]
   }
@@ -84,12 +82,6 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
   FLC_pdfs_train = FLC_pdfs_train[FLCs_train_order,]
   
   image_colors = two.colors(n = 100, "darkblue", "red", "green")
-  #image_colors = tim_colors(100)
-  #  image_colors = colorRampPalette(brewer.pal(9, name="YlOrRd"))(100)
-  #  image_colors = colorRampPalette(brewer.pal(9, name="RdGy"))(100)
-  
-  #  image_colors = rev(colorRampPalette(brewer.pal(9, name="RdBuYl"))(100))
-  #state_colors = two_colors(out$nstates["best"], "darkgreen", "darkred", "gray")
   state_colors = colorRampPalette(brewer.pal(9, name="Set1"))(out$nstates['best'])
   
   state_tickmarks = pretty(1:out$nstates["best"])
@@ -113,7 +105,6 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
   axis(4, at = pdf_FLC_tickmarks, labels=paste(pdf_FLC_tickmarks))
   
   abline(v = FLCs_train_ordered[apply(FLC_pdfs_train, 2, which.max)], col=state_colors, lty =2)
-  #mtext("FLC", 1, line = line, cex = cex.lab)
   mtext("p(x|S)", 2, line = line, cex = cex.lab)
   legend("topright", "training only")
   
@@ -129,15 +120,11 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
     legend("topright", type)
   }
   
-  #mtext("state id", 1, line = line, cex = cex.lab)
   mtext("P(S)", 2, line = line, cex = cex.lab)
   box()
-  #axis(1, at = state_tickmarks, labels = paste(state_tickmarks), col = state_colors)
   axis(4, at = state_probs_tickmarks, labels=paste(state_probs_tickmarks))
   
   par(mar = c(5,4,0.1,1))
-  #image(1:out$nstates["best"], 1:nPLCs, t(state_probs_matrix), axes=FALSE, 
-  #      col=image_colors, xlab = "", ylab = "", main = "", cex.main = cex.main)
   image2(state_probs_matrix, axes=FALSE, legend = FALSE,
         col=image_colors, xlab = "", ylab = "", main = "", cex.main = cex.main)
   abline(v = 0:out$nstates["best"] + 0.5, col = "gray", lwd = 1)
@@ -154,10 +141,6 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
     mtext("training", 2, line = 0.25, at = nrow(state_probs_matrix)*4/5 )
   }
   
-  
-  #mtext(expression("P(S| x, L"^-"-glyphosate line1"), 4, line = line, cex = cex.lab)
-  #image.plot(t(state_probs_matrix), axes=F, col=image_colors, horizontal=F, legend.only=T, legend.width=.25, legend.shrink=T, add=T, axis.args=list(lwd=0, mgp=c(2,.5,0), tck=-.5), smallplot= c(.91,.94, 0.1,.99))
-  
   axis(1, at = state_tickmarks, labels = paste(state_tickmarks), col = state_colors)
   axis(4, at = LC_tickmarks, labels=rev(paste(LC_tickmarks)))
   
@@ -165,16 +148,6 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
   # Right column of the plot
   par(mar = c(0,5,1,3))
   if (type != "both"){
-    #matplot(loglik, ylab = "", main = "MSE", type = "l", lty = c(1,2,1,2), col = c(1,1,2,2), lwd = 2, axes = FALSE)
-    #legend("bottomleft", colnames(out$MSE_trace), lty = c(1,2,1,2), col=c(1,1,2,2), lwd=2)
-    #axis(1, at = iter_tickmarks, labels = paste(iter_tickmarks) )
-    #axis(2)
-    #box()
-    
-    #abline(v = out$niter["best"], lty = 1)
-    #mtext("Iteration", 1, line = line, cex = cex.lab)
-    #mtext("MSE", 2, line = line, cex = cex.lab)
-    
     ts.plot(ts(loglik), pch = 1, main = "", ylab = "", xlab = "", axes = FALSE)
     abline(v = c(0, out$merging_times-0.5))
     axis(2)
@@ -191,12 +164,11 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
     mtext("Number of states", 4, line=2, cex=cex.lab)
     
   } else {
-    matplot(loglik, ylab = "", main = "", type = "l", lty = c(1,2,1,2), col = c(1,1,2,2), lwd = 2, axes = FALSE, cex.main = cex.main)
-    #axis(1, at = iter_tickmarks, labels = paste(iter_tickmarks) )
+    matplot(loglik, ylab = "", main = "", type = "l", lty = c(1,2,1,2), 
+            col = c(1,1,2,2), lwd = 2, axes = FALSE, cex.main = cex.main)
     box()
     axis(4)
     abline(v = out$niter["best"], lty = 3, lwd = 2)
-    #mtext("Iteration", 1, line = line, cex = cex.lab)
     mtext("log-likelihood", 2, line = line, cex = cex.lab)
   }
   
@@ -204,12 +176,10 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
   # MSE comparison
   matplot(mse, ylab = "", main = "", type = "l", lty = c(1,2,1,2), 
           col = c(1,1,2,2), lwd = 2, axes = FALSE, cex.main = cex.main)
-  #legend("bottomleft", colnames(out$MSE_trace), lty = c(1,2,1,2), col=c(1,1,2,2), lwd=2)
   box()  
   axis(4)
   
   abline(v = out$niter["best"], lty = 3, lwd = 2)
-  #mtext("Iteration", 1, line = line, cex = cex.lab)
   mtext("MSE", 2, line = line, cex = cex.lab)
   
   par(mar = c(4,5,0,3))
@@ -219,8 +189,7 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
   box()
   axis(1, at = iter_tickmarks, labels = paste(iter_tickmarks) )
   axis(4)
-  
-  #legend("topright", colnames(out$penalty), lty = 1:2, col = 1:2, lwd=2, cex = cex.lab)
+
   abline(v = out$niter["best"], lty = 3, lwd = 2)
   mtext("Iteration", 1, line = line+1, cex = cex.lab)  
   mtext("penalty", 2, line = line, cex = cex.lab)
@@ -232,9 +201,7 @@ plot.mixed_LICORS  =  function(x, type = "both", cex.axis = 1.5, cex.lab = 1.5,
   rect(0, seq(0, 1, length=100)[-100],
        .1, seq(0, 1, length=100)[-1],
        col=image_colors, border=NA)
-  #text(0.1, 0.5, "probability", las = 1)
-  
-  #box()
+
   axis(2, at=pretty(seq(0, 1, length=100)), las=0)
   mtext("probability", side = 2, cex = cex.lab*0.75, line = 2, at = 0.25)
   

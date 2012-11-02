@@ -13,7 +13,7 @@
 #' @examples
 #' AA = matrix(rnorm(200), ncol = 10)
 #' LC_geom = setup_LC_geometry(speed=1, horizon=list(PLC = 3, FLC = 0), shape = "cone")
-#' aa = get_spacetime_iterator(dim(AA), LC_geom$coords)
+#' bb = get_spacetime_iterator(dim(AA), LC_geom$coords)
 #' 
 
 get_spacetime_iterator <- function(dim = NULL, LC_coords = NULL) {
@@ -49,8 +49,13 @@ get_spacetime_iterator <- function(dim = NULL, LC_coords = NULL) {
   }
   out <- list()
   out$all <- iterator_spacetime
-  out$length_all <- prod(dim)
+  out$dim_all <- dim
+  out$length_all <- prod(out$dim_all)
   out$truncated <- iterator_spacetime.truncated
-  out$length_truncated <- prod(truncated_dim$dim)
+  out$dim_truncated <- truncated_dim$dim
+  out$length_truncated <- prod(out$dim_truncated)
+  
+  names(out$dim_all) = names(out$dim_truncated) = c("time", paste("space", 1:length(space_dim), sep=""))
+  
   return(out)
 }

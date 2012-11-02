@@ -46,11 +46,6 @@ normalize <- function(x, byrow = TRUE, tol = 1e-6) {
         }
         matrix.new[cbind(all.zeros, max.pos)] = 1
       }
-      
-      #  if (any(all.zeros)) {
-      #      matrix.new[all.zeros, ] <- runif(sum(all.zeros) * ncol(matrix.new), 
-      #          0, 1)
-      #  }
       matrix.new <- sweep(matrix.new, 1, rowSums(matrix.new), "/")
       if (tol > 0) {
         matrix.new[matrix.new < tol] <- 0

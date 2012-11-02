@@ -115,9 +115,7 @@ estimate_LC_pdf_given_state <- function(state_label = NULL, state_vector = NULL,
   
   # state adaptive bandwidth selection adjust the bw.nrd0() rule to only 
   # observations in the given state
-  #print(state_vector)
   LCs_in_state <- which(state_vector == state_label)
-  #print(LCs_in_state)
   if (length(LCs_in_state) < 5){
     LCs_in_state <- which(weights >= quantile(weights, 0.9) )
   }
@@ -182,16 +180,9 @@ estimate_LC_pdf_given_state <- function(state_label = NULL, state_vector = NULL,
         LC_pdf_given_state <- mv_wKDE(LCs, eval_points = eval_LCs, 
                                       weights = weights/sum(weights))
       }
-      
-      # stop('Multivariate nonparametrc not implemented yet (too CPU intensive
-      # for high dimensions).') LC_pdf_given_state$y <-
-      # diag(sm.density(LCs[state_vector == state_label,], eval.points =
-      # eval_LCs, display='none')$estimate)
     } else if (method == "normal") {
       
       if (floor(effective_nsamples) < kk) {
-        # ind.sel = weights > 1/kk Sigma_cov = 0.9 * cov(LCs[ind.sel,]) +
-        # 0.1 * cov(LCs)
         Sigma_cov <- cov(LCs)
         mu_vec <- apply(LCs, 2, median)
       } else {

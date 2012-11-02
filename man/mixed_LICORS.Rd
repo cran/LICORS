@@ -2,11 +2,11 @@
 \alias{mixed_LICORS}
 \title{Mixed LICORS: An EM-like Algorithm for Predictive State Space Estimation}
 \usage{
-mixed_LICORS(LCs = list(PLC = PLCs, FLC = FLCs), nstates_start = NULL, initialization = NULL, 
-    max_iter = 500, method = list(PLC = "normal", FLC = "nonparametric"), alpha = 0.01, 
-    seed = NULL, verbose = TRUE, CV_train_ratio = 0.75, CV_split_random = FALSE, 
-    sparsity = "stochastic", lambda = 0, loss = function(x, xhat) mean((x - 
-        xhat)^2))
+mixed_LICORS(LCs = list(PLC = PLCs, FLC = FLCs, dim = list(original = NULL, 
+    truncated = NULL)), nstates_start = NULL, initialization = NULL, max_iter = 500, 
+    method = list(PLC = "normal", FLC = "nonparametric"), alpha = 0.01, seed = NULL, 
+    verbose = TRUE, CV_train_ratio = 0.75, CV_split_random = FALSE, sparsity = "stochastic", 
+    lambda = 0, loss = function(x, xhat) mean((x - xhat)^2))
 }
 \arguments{
   \item{LCs}{list of PLCs and FLCs matrices (see output of
@@ -78,7 +78,7 @@ data(contCA00)
 
 LC_geom <- setup_LC_geometry(speed = 1, horizon = list(PLC = 2, FLC = 0), 
     shape = "cone")
-bb <- data2LCs(contCA00$observed, LC_coords = LC_geom$coords)
+bb <- data2LCs(t(contCA00$observed), LC_coords = LC_geom$coords)
 
 mm <- mixed_LICORS(bb, nstates_start = 10, init = "KmeansPLC", max_iter = 20)
 plot(mm)

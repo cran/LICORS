@@ -2,7 +2,7 @@ Package: LICORS
 Type: Package
 Title: Light Cone Reconstruction of States - Predictive State
         Estimation From Spatio-Temporal Data
-Version: 0.1
+Version: 0.1.1
 Date: 2012-11-02
 Author: Georg M. Goerg <gmg@stat.cmu.edu>
 Maintainer: Georg M. Goerg <gmg@stat.cmu.edu>
@@ -15,7 +15,8 @@ Description: Estimates predictive states from spatio-temporal data and
         systems), and methods for optimal forecasting.
 License: GPL-2
 Depends: R (>= 2.12.1), itertools
-Imports: RColorBrewer, mvtnorm, zoo, FNN, itertools, fields, locfit
+Imports: RColorBrewer, mvtnorm, zoo, FNN, itertools, fields, locfit,
+        gam
 Suggests: huge, locfit, RANN, yaImpute
 URL: http://www.stat.cmu.edu/~gmg
 Collate: 'compute_LC_coords.R' 'compute_LICORS_loglik.R'
@@ -30,6 +31,6 @@ Collate: 'compute_LC_coords.R' 'compute_LICORS_loglik.R'
         'search_knn.R' 'setup_LC_geometry.R' 'sparsify_weights.R'
         'states2weight_matrix.R' 'threshold.R' 'weight_matrix2states.R'
         'wKDE.R' 'mixed_LICORS-utils.R'
-Packaged: 2012-11-07 15:25:23 UTC; GMG
+Packaged: 2012-11-13 15:40:26 UTC; GMG
 Repository: CRAN
-Date/Publication: 2012-11-08 06:05:42
+Date/Publication: 2012-11-13 16:04:38

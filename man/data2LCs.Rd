@@ -37,7 +37,7 @@ data2LCs(field = NULL, LC_coords = list(PLC = NULL, FLC = NULL))
 set.seed(1)
 AA <- matrix(rnorm(200), ncol = 10)
 LC_geom <- setup_LC_geometry(speed = 1, horizon = list(PLC = 2, FLC = 0), shape = "cone")
-bb <- data2LCs(AA, LC_coords = LC_geom$coords)
+bb <- data2LCs(t(AA), LC_coords = LC_geom$coords)
 image2(bb$PLC)
 plot(density(bb$FLC))
 }

@@ -20,9 +20,6 @@ merge_states(states = NULL, weight_matrix = NULL)
   removing columns \eqn{i_2, \ldots, i_j}.
 }
 \examples{
-op <- par(no.readonly = TRUE)
-dev.off()
-
 set.seed(10)
 WW <- matrix(c(rexp(1000, 1/10), runif(1000)), ncol = 5, byrow = FALSE)
 WW <- normalize(WW)
@@ -35,7 +32,6 @@ WW_new <- merge_states(c(1, 3, 5), WW)
 par(mfrow = c(1, 2), mar = c(1, 1, 2, 1))
 image2(WW, main = paste(ncol(WW), "states"), legend = FALSE)
 image2(WW_new, main = paste(ncol(WW_new), "states"), legend = FALSE)
-par(op)
 }
 \keyword{array}
 \keyword{manip}

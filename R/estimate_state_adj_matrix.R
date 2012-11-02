@@ -116,7 +116,6 @@ estimate_state_adj_matrix <- function(state_vector = NULL,
     adjacency_mat <- exp(-adjacency_mat)
     adjacency_mat <- adjacency_mat - min(adjacency_mat)
     adjacency_mat <- adjacency_mat/max(adjacency_mat)
-    # diag(adjacency_mat) = max(adjacency_mat)*1.1
   }
   
   if (!is.null(alpha) & is.character(distance)) {

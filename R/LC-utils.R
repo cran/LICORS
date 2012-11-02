@@ -63,10 +63,9 @@ plot.LC <- function(x, cex.axis = 2, cex.lab = 2, ...) {
     print("Not yet implemented.")
   } else {
     plot.new()
-    legend("top", paste("Can't plot (3+1)D systems \n not possible.", cex = 2))
+    legend("top", paste("Can't plot (3+1)D systems.", cex = 2))
   }
   
-  # if (object$space_dim < 3){ title('PLC (red) and FLC (blue) shape') }
 } 
 
 #' @rdname LC-utils

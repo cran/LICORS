@@ -27,8 +27,6 @@
 #' @export
 #' @examples
 #' ### Univariate example ###
-#' op <- par(no.readonly=TRUE)
-#' dev.off()
 #' xx = sort(c(rnorm(100, mean = 1), runif(100)))
 #' plot(xx, wKDE(xx), type = "l")
 #' yy = sort(runif(50, -1, 4)-1)

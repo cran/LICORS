@@ -31,7 +31,7 @@
 #' set.seed(1)
 #' AA = matrix(rnorm(200), ncol = 10)
 #' LC_geom = setup_LC_geometry(speed=1, horizon=list(PLC = 2, FLC = 0), shape ="cone")
-#' bb = data2LCs(AA, LC_coords = LC_geom$coords)
+#' bb = data2LCs(t(AA), LC_coords = LC_geom$coords)
 #' image2(bb$PLC)
 #' plot(density(bb$FLC))
 #' 
@@ -43,7 +43,12 @@ data2LCs <- function(field = NULL,
   n_f = controls$n_f
   space_dim = controls$space_dim
   
-  iter_spacetime = get_spacetime_iterator(dim(t(field)), LC_coords)
+  if (space_dim + 1 != length(dim(field))){
+    stop("The provided LC coordinates do not yield the same dimensionality for 
+         the LC as for the original field.")
+  }
+  
+  iter_spacetime = get_spacetime_iterator(dim(field), LC_coords)
   
   LC_array = matrix(NA, nrow = iter_spacetime$length_truncated,
                     ncol = 1 + 1 + space_dim + n_f + n_p )
@@ -60,7 +65,7 @@ data2LCs <- function(field = NULL,
       ii = ii + 1
       LC_array[ii,1] = ii
       LC_array[ii, 1 + 1:length(temp_coord)] = temp_coord
-      LC_array[ii, 1 + space_dim+1 + 1:n_f] = c(field[temp_coord[2], temp_coord[1]])
+      LC_array[ii, 1 + space_dim+1 + 1:n_f] = c(field[temp_coord[1], temp_coord[2]])
       LC_array[ii, 1 + space_dim+1 + n_f + 1:n_p] = get_LC_config(temp_coord, field, LC_coords$PLC)
     }
   } else {
@@ -69,15 +74,14 @@ data2LCs <- function(field = NULL,
       ii = ii + 1
       LC_array[ii, 1] = ii
       LC_array[ii, 1 + 1:length(temp_coord)] = temp_coord
-      LC_array[ii, 1 + space_dim+1 + 1:n_f] = get_LC_config(temp_coord, field, LC_coords$FLC) #c(field[temp_coord[2], temp_coord[1]])
+      LC_array[ii, 1 + space_dim+1 + 1:n_f] = get_LC_config(temp_coord, field, LC_coords$FLC)
       LC_array[ii, 1 + space_dim+1 + n_f + 1:n_p] = get_LC_config(temp_coord, field, LC_coords$PLC)
     }
   }
   out = list()
   out$FLC = cbind(LC_array[, 1 + space_dim+1 + 1:n_f])
   out$PLC = LC_array[, 1 + space_dim+1 + n_f + 1:n_p]
-  #out$coords = LC_array[, c(1, 1+ 1:length(temp_coord))]
-  
+  out$dim = list(original = iter_spacetime$dim_all, truncated = iter_spacetime$dim_truncated)
   invisible( out )
 }
 

@@ -73,8 +73,6 @@ estimate_state_probs <- function(weight_matrix = NULL,
                                                  state_vector = state_vector,
                                                  nstates_total = nstates_total)
     
-    #print(marginal_state_probs)
-    
     if (is.null(nstates_total) && is.null(PLC_pdfs) && is.null(FLC_pdfs)) {
       stop("you must provide either one of those")
     }
@@ -93,9 +91,6 @@ estimate_state_probs <- function(weight_matrix = NULL,
     # state
     if (is.null(PLC_pdfs)) {
       state_probs_given_LCs[cbind(1:nrow(state_probs_given_LCs), state_vector)] = 1
-      #for (ii in 1:nstates_total) {
-      #  state_probs_given_LCs[state_vector == ii, ii] <- 1
-      #}
     } else {
       state_probs_given_LCs <- sweep(PLC_pdfs, 2, marginal_state_probs, "*")
     } 
@@ -103,7 +98,6 @@ estimate_state_probs <- function(weight_matrix = NULL,
     if (!is.null(FLC_pdfs)) {
       state_probs_given_LCs <- state_probs_given_LCs * FLC_pdfs
     }
-    #state_probs <- normalize(state_probs_given_LCs)
   }
   
   if (is.null(PLC_pdfs) & is.null(FLC_pdfs)){

@@ -32,13 +32,5 @@ remove_small_sample_states <- function(weight_matrix = NULL, min = NULL) {
   if (is.null(min)){
     stop("You must provide the minimum sample size 'min'.")
   }
-  
-  #effective_sample_size_states <- colSums(weight_matrix)
-  
-  #weight_matrix.new <- weight_matrix[, count.states > min]
-  #out = list()
-  #out$matrix = normalize(weight_matrix[, count_states > min])
   invisible( normalize(weight_matrix[, colSums(weight_matrix) > min]) )
-  # out$vector = weight_matrix2states(weight_matrix.new)
-  #invisible(out)
 } 

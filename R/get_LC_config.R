@@ -18,14 +18,14 @@
 #' @examples
 #' AA = matrix(rnorm(40), ncol = 5)
 #' image2(AA)
-#' LCind = compute_LC_coords(speed = 1, horizon = 2, shape = "cone")
+#' LCind = compute_LC_coords(speed = 1, horizon = 1, shape = "cone")
 #' AA
-#' get_LC_config(c(2,5), AA, LCind)
+#' get_LC_config(c(5,2), AA, LCind)
 #' 
 get_LC_config <- function(coord, 
                           field = NULL, 
                           LC_coords = NULL) {
   
-  return( field[sweep(LC_coords[,2:1], 2, rbind(coord[2:1]), "+")] )
+  return( field[sweep(LC_coords, 2, rbind(coord), "+")] )
 }
 

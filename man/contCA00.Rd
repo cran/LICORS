@@ -17,7 +17,6 @@ pixels in space, and \eqn{T = 200} over time:
 \examples{
 # set original par parameters
 op <- par(no.readonly = TRUE)
-dev.off()
 
 data(contCA00)
 par(mfrow = c(2, 2), mar = c(3, 3, 2, 1))
