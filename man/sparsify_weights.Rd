@@ -2,8 +2,8 @@
 \alias{sparsify_weights}
 \title{Sparsify weights}
 \usage{
-sparsify_weights(weight_matrix_proposed, weight_matrix_current = NULL, penalty = "entropy", 
-    lambda = 0)
+sparsify_weights(weight_matrix_proposed, weight_matrix_current = NULL, 
+    penalty = "entropy", lambda = 0)
 }
 \arguments{
   \item{weight_matrix_proposed}{\eqn{N \times K} weight

@@ -48,8 +48,7 @@ points(XX, pch = 19, cex = 2, xlab = "", ylab = "")
 arrows(XX[, 1], XX[, 2], XX[knns_of_XX_in_XX, 1], XX[knns_of_XX_in_XX, 2], lwd = 2)
 points(YY, pch = 15, col = 2)
 arrows(YY[, 1], YY[, 2], XX[knns_of_YY_in_XX, 1], XX[knns_of_YY_in_XX, 2], col = 2)
-legend("left", c("X", "Y"), lty = 1, pch = c(19, 15), cex = c(2, 1), col = c(1, 
-    2))
+legend("left", c("X", "Y"), lty = 1, pch = c(19, 15), cex = c(2, 1), col = c(1, 2))
 }
 \seealso{
   Packages \pkg{FNN}, \pkg{RANN}, and \pkg{yaImpute} for

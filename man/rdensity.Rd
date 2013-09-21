@@ -2,7 +2,8 @@
 \alias{rdensity}
 \title{Generate random sample from density() or wKDE}
 \usage{
-rdensity(n = 100, data = NULL, fhat = NULL, bw = fhat$bw, weights = NULL, kernel = "Gaussian")
+rdensity(n = 100, data = NULL, fhat = NULL, bw = fhat$bw, weights = NULL, 
+    kernel = "Gaussian")
 }
 \arguments{
   \item{n}{number of samples}

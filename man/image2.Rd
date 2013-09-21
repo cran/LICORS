@@ -4,8 +4,8 @@
 \title{Improved image() function}
 \usage{
 image2(x = NULL, y = NULL, z = NULL, col = NULL, axes = FALSE, legend = TRUE, 
-    xlab = "", ylab = "", zlim = NULL, density = FALSE, max.height = NULL, zlim.label = "color scale", 
-    ...)
+    xlab = "", ylab = "", zlim = NULL, density = FALSE, max.height = NULL, 
+    zlim.label = "color scale", ...)
 
 make_legend(data = NULL, col = NULL, side = 1, zlim = NULL, col.ticks = NULL, 
     cex.axis = 2, max.height = 1, col.label = "")

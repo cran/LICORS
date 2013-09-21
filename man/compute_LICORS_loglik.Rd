@@ -2,8 +2,8 @@
 \alias{compute_LICORS_loglik}
 \title{Log-likelihood of LICORS model}
 \usage{
-compute_LICORS_loglik(weight_matrix = NULL, FLC_pdfs = NULL, lambda = 0, penalty = "entropy", 
-    q = 2, base = exp(1))
+compute_LICORS_loglik(weight_matrix = NULL, FLC_pdfs = NULL, lambda = 0, 
+    penalty = "entropy", q = 2, base = exp(1))
 }
 \arguments{
   \item{weight_matrix}{\eqn{N \times K} weight matrix}

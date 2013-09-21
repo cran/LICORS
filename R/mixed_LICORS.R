@@ -67,7 +67,7 @@ function(LCs = list(PLC = PLCs, FLC = FLCs, dim = list(original = NULL, truncate
          CV_split_random = FALSE, 
          sparsity = "stochastic", 
          lambda = 0,
-         loss = function(x, xhat) mean((x-xhat)^2) ){
+         loss = function(x, xhat) mean((x-xhat)^2)){
   
   FLCs = LCs$FLC
   PLCs = LCs$PLC
@@ -380,8 +380,8 @@ function(LCs = list(PLC = PLCs, FLC = FLCs, dim = list(original = NULL, truncate
     }
     if (verbose) {    
       cat("Solution more sparse", temp_more.sparse, "\n")
-      cat("Temp converged", temp_converged, "\n")
-      cat("Should we merge", temp_merge, "\n")
+      cat("EM converged temporarily", temp_converged, "\n")
+      cat("Should states be merged", temp_merge, "\n")
     }
     loglik_train_weighted[ii] = compute_LICORS_loglik(FLC_pdfs_train, weights_train_temp, lambda = lambda)
     loglik_train[ii] = compute_LICORS_loglik(FLC_pdfs_train, 

@@ -217,6 +217,7 @@ image2 <- function(x=NULL, y=NULL, z=NULL, col = NULL,
 #' @param cex.axis The magnification to be used for axis annotation relative to 
 #' the current setting of \code{cex}.
 #' @param col.label same as \code{zlim.label}
+#' @export
 #' @keywords aplot color
 
 make_legend <- function(data = NULL, col = NULL, side = 1, 

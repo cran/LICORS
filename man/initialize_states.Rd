@@ -2,8 +2,8 @@
 \alias{initialize_states}
 \title{State initialization for iterative algorithms (randomly or variants of kmeans)}
 \usage{
-initialize_states(nstates = NULL, nsamples = NULL, method = "random", LCs = list(PLC = NULL, 
-    FLC = NULL))
+initialize_states(nstates = NULL, nsamples = NULL, method = "random", 
+    LCs = list(PLC = NULL, FLC = NULL))
 }
 \arguments{
   \item{nstates}{number of states}

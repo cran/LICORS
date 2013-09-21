@@ -4,9 +4,10 @@
 \usage{
 mixed_LICORS(LCs = list(PLC = PLCs, FLC = FLCs, dim = list(original = NULL, 
     truncated = NULL)), nstates_start = NULL, initialization = NULL, max_iter = 500, 
-    method = list(PLC = "normal", FLC = "nonparametric"), alpha = 0.01, seed = NULL, 
-    verbose = TRUE, CV_train_ratio = 0.75, CV_split_random = FALSE, sparsity = "stochastic", 
-    lambda = 0, loss = function(x, xhat) mean((x - xhat)^2))
+    method = list(PLC = "normal", FLC = "nonparametric"), alpha = 0.01, 
+    seed = NULL, verbose = TRUE, CV_train_ratio = 0.75, CV_split_random = FALSE, 
+    sparsity = "stochastic", lambda = 0, loss = function(x, xhat) mean((x - 
+        xhat)^2))
 }
 \arguments{
   \item{LCs}{list of PLCs and FLCs matrices (see output of

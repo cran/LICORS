@@ -98,7 +98,7 @@ contCA_LCs <- data2LCs(contCA00$observed, LC_coords = LC_geom$coords)
 # run mixed LICORS
 
 mod <- mixed_LICORS(contCA_LCs, nstates_start = 10, initialization = "KmeansPLC", 
-    max_iter = 50)
+    max_iter = 20)
 
 plot(mod)
 }

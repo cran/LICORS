@@ -26,7 +26,9 @@ WW <- normalize(WW)
 WW
 weight_matrix2states(WW)
 weight_matrix2states(WW, "sample")
-weight_matrix2states(WW, "sample")  # in general they are different from previous runs unless we have 0/1 matrix
+# another 'sample' is in general different from previous conversion unless WW
+# is a 0/1 matrix
+weight_matrix2states(WW, "sample")
 }
 \seealso{
   \code{\link{states2weight_matrix}}

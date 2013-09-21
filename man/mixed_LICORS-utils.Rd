@@ -4,8 +4,8 @@
 \alias{summary.mixed_LICORS}
 \title{Utilities for ``LICORS'' class}
 \usage{
-\method{plot}{mixed_LICORS}(x, type = "both", cex.axis = 1.5, cex.lab = 1.5, cex.main = 2, 
-    line = 1.5, ...)
+\method{plot}{mixed_LICORS}(x, type = "both", cex.axis = 1.5, cex.lab = 1.5, 
+    cex.main = 2, line = 1.5, ...)
 
 \method{summary}{mixed_LICORS}(object, ...)
 }
