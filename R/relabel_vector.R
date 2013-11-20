@@ -21,15 +21,16 @@
 #' 
 
 relabel_vector <- function(vec, order = FALSE) {
+  
   vec_unique <- unique(vec)
-  nelements <- length(vec_unique)
+  num.elements <- length(vec_unique)
   
   if (order) {
     vec_unique <- vec_unique[order(table(vec), decreasing = TRUE)]
   }
-  # improve this with a vectorized approach!
+  # TODO: improve this with a vectorized approach
   vec_new <- rep(NA, length(vec))
-  for (ii in 1:nelements) {
+  for (ii in seq_len(num.elements)) {
     vec_new[vec == vec_unique[ii]] <- ii
   }
   

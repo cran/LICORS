@@ -42,31 +42,35 @@
 #' legend("left", c("X", "Y"), lty=1, pch = c(19, 15), cex = c(2,1), col = c(1,2))
 #' 
 
-search_knn <- function(data, k = 1, query = NULL, method = "FNN", ...) {
+search_knn <- function(data, k = 1, query = NULL, 
+                       method = c("FNN", "RANN", "yaImpute"), ...) {
   
   kk <- k
+  method <- match.arg(method)
   
-  if (method == "FNN") {
-    if (is.null(query)) {
-      out <- get.knn(data, kk, ...)$nn.index
-    } else {
-      out <- get.knnx(data, query, kk, ...)$nn.index
-    }
-  } else if (method == "RANN") {
-    if (is.null(query)) {
-      out <- knn.index(data, kk, "kd_tree", ...)
-    } else {
-      stop("Search for other than self knn is not implemented in 'RANN' package.")
-    }
-  } else if (method == "yaImpute") {
-    if (is.null(query)) {
-      out <- ann(ref = data, target = data, tree.type = "kd", k = kk + 1, 
-                 verbose = FALSE, eps = 0, ...)$knnIndexDist[, kk + 1]
-    } else {
-      out <- ann(ref = data, target = query, tree.type = "kd", k = kk + 
-        1, verbose = FALSE, eps = 0, ...)$knnIndexDist[, kk + 1]
-    }
-  }
-  
+  switch(method,
+         FNN = {
+           if (is.null(query)) {
+             out <- get.knn(data, kk, ...)$nn.index
+           } else {
+             out <- get.knnx(data, query, kk, ...)$nn.index
+           }
+         },
+         RANN = {
+           if (is.null(query)) {
+             out <- knn.index(data, kk, "kd_tree", ...)
+           } else {
+             stop("Search for other than self knn is not implemented in 'RANN' package.")
+           }
+         },
+         yaImpute = {
+           if (is.null(query)) {
+             out <- ann(ref = data, target = data, tree.type = "kd", k = kk + 1, 
+                        verbose = FALSE, eps = 0, ...)$knnIndexDist[, kk + 1]
+           } else {
+             out <- ann(ref = data, target = query, tree.type = "kd", k = kk + 
+                          1, verbose = FALSE, eps = 0, ...)$knnIndexDist[, kk + 1]
+           }
+         })
   return(c(out))
 }

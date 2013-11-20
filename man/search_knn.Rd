@@ -2,7 +2,7 @@
 \alias{search_knn}
 \title{K nearest neighbor (KNN) search}
 \usage{
-search_knn(data, k = 1, query = NULL, method = "FNN", ...)
+search_knn(data, k = 1, query = NULL, method = c("FNN", "RANN", "yaImpute"), ...)
 }
 \arguments{
   \item{data}{an \eqn{N \times d} matrix, where \eqn{N} are

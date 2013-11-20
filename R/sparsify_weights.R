@@ -4,8 +4,8 @@
 #' This function makes weights of a mixture model more sparse using gradient 
 #' based penalty methods.
 #' 
-#' @param weight_matrix_proposed \eqn{N \times K} weight matrix
-#' @param weight_matrix_current \eqn{N \times K} weight matrix
+#' @param weight.matrix.proposed \eqn{N \times K} weight matrix
+#' @param weight.matrix.current \eqn{N \times K} weight matrix
 #' @param penalty type of penalty: \code{c("entropy", "1-Lq", "lognorm")}. 
 #' Default: \code{"entropy"}
 #' @param lambda penalization parameter: larger \code{lambda} gives sparser 
@@ -22,33 +22,33 @@
 #' compute_mixture_penalty(WW_sparse)
 #' compute_mixture_penalty(WW_more_sparse)
 
-sparsify_weights <- function(weight_matrix_proposed, 
-                             weight_matrix_current = NULL, 
+sparsify_weights <- function(weight.matrix.proposed, 
+                             weight.matrix.current = NULL, 
                              penalty = "entropy", 
                              lambda = 0) {
   
   if (lambda == 0) {
-    return(weight_matrix_proposed)
+    return(weight.matrix.proposed)
   } else {
-    kk = ncol(weight_matrix_proposed)
-    if (is.null(weight_matrix_current)) {
-      penalty_gradient = -(1 + log2(weight_matrix_proposed + 10^(-3)))/log2(kk)
+    kk <- ncol(weight.matrix.proposed)
+    if (is.null(weight.matrix.current)) {
+      penalty.gradient <- - (1 + log2(weight.matrix.proposed + 10^(-3))) / log2(kk)
     } else {
-      penalty_gradient = -(1 + log2(weight_matrix_current + 10^(-3)))/log2(kk)
+      penalty.gradient <- - (1 + log2(weight.matrix.current + 10^(-3))) / log2(kk)
     }
     # lambda = lambda + runif(1, -lambda/10, lambda/10)
     
-    # without hessian weight_matrix_new = weight_matrix_proposed + lambda *
-    # penalty_gradient multiply by Hessian
-    weight_matrix_new = weight_matrix_proposed * (1 - log2(kk) * lambda * penalty_gradient)
-    weight_matrix_new[weight_matrix_new < 0] = 0
-    all_zeros = apply(weight_matrix_new, 1, function(u) all(u == 0))
+    # without hessian weight.matrix.new = weight.matrix.proposed + lambda *
+    # penalty.gradient multiply by Hessian
+    weight.matrix.new <- weight.matrix.proposed * (1 - log2(kk) * lambda * penalty.gradient)
+    weight.matrix.new[weight.matrix.new < 0] <- 0
+    all.zeros <- apply(weight.matrix.new, 1, function(u) all(u == 0))
     
-    if (sum(all_zeros) > 1) {
-      weight_matrix_new[all_zeros, apply(weight_matrix_proposed[all_zeros, ], 1, which.max)] = 1
+    if (sum(all.zeros) > 1) {
+      weight.matrix.new[all.zeros, apply(weight.matrix.proposed[all.zeros, ], 1, which.max)] <- 1
     } else {
-      weight_matrix_new[all_zeros, which.max(weight_matrix_proposed[all_zeros, ])] = 1
+      weight.matrix.new[all.zeros, which.max(weight.matrix.proposed[all.zeros, ])] <- 1
     }
-    return(normalize(weight_matrix_new))
+    return(normalize(weight.matrix.new))
   }
 } 

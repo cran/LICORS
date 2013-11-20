@@ -33,11 +33,11 @@
 #' \code{distance = function(f, g) return(mean(abs(f-g)))}.
 #' 
 #' 
-#' @param state_vector vector of length \eqn{N} with entry \eqn{i} being the label 
+#' @param states vector of length \eqn{N} with entry \eqn{i} being the label 
 #' \eqn{k = 1, \ldots, K} of PLC \eqn{i}
 #' @param FLCs \eqn{N \times n_f} matrix of FLCs (only necessary if 
 #' \code{distance= "KS"})
-#' @param FLC_pdfs \eqn{N \times K} matrix of all \eqn{K} state-conditional FLC 
+#' @param pdfs.FLC \eqn{N \times K} matrix of all \eqn{K} state-conditional FLC 
 #' densities evaluated at each FLC \eqn{\ell^{+}_i}, \eqn{i=1, \ldots, N} (only 
 #' necessary if \code{distance = function(f, g) return(...)}).
 #' @param alpha significance level for testing. Default: \code{alpha=NULL} 
@@ -62,66 +62,65 @@
 #' WW = matrix(runif(10000), ncol = 10)
 #' WW = normalize(WW)
 #' temp_flcs = cbind(rnorm(nrow(WW)))
-#' temp_flc_pdfs = estimate_LC_pdfs(temp_flcs, WW)
-#' AA_ks = estimate_state_adj_matrix(state_vector = weight_matrix2states(WW), 
+#' temp_pdfs.FLC = estimate_LC_pdfs(temp_flcs, WW)
+#' AA_ks = estimate_state_adj_matrix(states = weight_matrix2states(WW), 
 #'                                   FLCs = temp_flcs, distance = "KS")
-#' AA_L1 = estimate_state_adj_matrix(FLC_pdfs = temp_flc_pdfs)
+#' AA_L1 = estimate_state_adj_matrix(pdfs.FLC = temp_pdfs.FLC)
 #' 
 #' par(mfrow = c(1,2), mar = c(1,1,2,1))
 #' image2(AA_ks, zlim = c(0,1), legend = FALSE, main = "Kolmogorov-Smirnov")
 #' image2(AA_L1, legend = FALSE, main = "L1 distance")
 #' 
-#' 
 
-estimate_state_adj_matrix <- function(state_vector = NULL, 
+estimate_state_adj_matrix <- function(states = NULL, 
                                       FLCs = NULL, 
-                                      FLC_pdfs = NULL, 
+                                      pdfs.FLC = NULL, 
                                       alpha = NULL, 
                                       distance = function(f, g) return(mean(abs(f-g))) ) {
   if (is.character(distance)) {
     
-    if (is.null(state_vector) | is.null(FLCs)){
+    if (is.null(states) | is.null(FLCs)){
       stop("If you choose a KS test, then you must provide the state space
-           assignment ('state_vector') and the FLCs ('FLCs').")
+           assignment ('states') and the FLCs ('FLCs').")
     }
     
-    nstates <- length(unique(state_vector))
-    adjacency_mat <- matrix(0, ncol = nstates, nrow = nstates)
-    for (ii in 1:nstates) {
-      FLC_ii <- FLCs[state_vector == ii]
-      for (jj in ii:nstates) {
+    num.states <- length(unique(states))
+    adjacency.mat <- matrix(0, ncol = num.states, nrow = num.states)
+    for (ii in seq_len(num.states)) {
+      FLCs.in.ii <- FLCs[states == ii]
+      for (jj in ii:num.states) {
         if (ii != jj) {
-          adjacency_mat[ii, jj] <- suppressWarnings(ks.test(FLC_ii, 
-                                                            FLCs[state_vector == jj])$p.value)
+          adjacency.mat[ii, jj] <- suppressWarnings(ks.test(FLCs.in.ii, 
+                                                            FLCs[states == jj])$p.value)
         }
       }
     }
   } else {
-    nstates <- ncol(FLC_pdfs)
-    adjacency_mat <- matrix(0, ncol = nstates, nrow = nstates)
-    for (ii in 1:nstates) {
-      FLC_pdfs_ii <- FLC_pdfs[, ii]
-      for (jj in ii:nstates) {
+    num.states <- ncol(pdfs.FLC)
+    adjacency.mat <- matrix(0, ncol = num.states, nrow = num.states)
+    for (ii in seq_len(num.states)) {
+      pdf.FLC.in.ii <- pdfs.FLC[, ii]
+      for (jj in ii:num.states) {
         if (ii != jj) {
-          adjacency_mat[ii, jj] <- distance(FLC_pdfs_ii, FLC_pdfs[, jj])
+          adjacency.mat[ii, jj] <- distance(pdf.FLC.in.ii, pdfs.FLC[, jj])
         }
       }
     }
   }
   # fill up the whole matrix (since it's symmetric)
-  adjacency_mat <- adjacency_mat + t(adjacency_mat)
+  adjacency.mat <- adjacency.mat + t(adjacency.mat)
   if (is.character(distance)) {
-    diag(adjacency_mat) <- 1
+    diag(adjacency.mat) <- 1
   } else {
-    adjacency_mat <- exp(-adjacency_mat)
-    adjacency_mat <- adjacency_mat - min(adjacency_mat)
-    adjacency_mat <- adjacency_mat/max(adjacency_mat)
+    adjacency.mat <- exp(-adjacency.mat)
+    adjacency.mat <- adjacency.mat - min(adjacency.mat)
+    adjacency.mat <- adjacency.mat / max(adjacency.mat)
   }
   
   if (!is.null(alpha) & is.character(distance)) {
     # merging matrix
-    adjacency_mat <- (adjacency_mat > alpha)
+    adjacency.mat <- (adjacency.mat > alpha)
   }
   
-  invisible(adjacency_mat)
+  invisible(adjacency.mat)
 } 

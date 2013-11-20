@@ -15,7 +15,7 @@
 }
 \section{Details on Methodology - Predictive State Model for Spatio-temporal Processes}{
   \emph{For details and additional references please
-  consult Goerg and Shalizi (2012).}
+  consult Goerg and Shalizi (2012, 2013).}
 
   Let \eqn{\mathcal{D} = \lbrace X(\mathbf{r}, t) \mid
   \mathbf{r} \in \mathbf{S}, t = 1, \ldots, T \rbrace =
@@ -78,13 +78,13 @@
 
   Many functions use these acryonyms as part of their name.
   Function arguments that repeat over and over again are:
-  \describe{ \item{\code{weight_matrix}}{an \eqn{N \times
+  \describe{ \item{\code{weight.matrix}}{an \eqn{N \times
   K} matrix, where \eqn{N} are the samples and \eqn{K} are
   the states. That is, each row contains a vector of length
   \eqn{K} that adds up to one (the mixture weights).}
-  \item{\code{state_vector}}{a vector of length \eqn{N}
-  with entry \eqn{i} being the label \eqn{k = 1, \ldots, K}
-  of PLC \eqn{i}} }
+  \item{\code{states}}{a vector of length \eqn{N} with
+  entry \eqn{i} being the label \eqn{k = 1, \ldots, K} of
+  PLC \eqn{i}} }
 }
 \examples{
 \dontrun{
@@ -94,10 +94,10 @@ LC_geom <- setup_LC_geometry(speed = 1, horizon = list(PLC = 2, FLC = 0),
 # load the field
 data(contCA00)
 # get LC configurations from field
-contCA_LCs <- data2LCs(contCA00$observed, LC_coords = LC_geom$coords)
+contCA_LCs <- data2LCs(contCA00$observed, LC.coordinates = LC_geom$coordinates)
 # run mixed LICORS
 
-mod <- mixed_LICORS(contCA_LCs, nstates_start = 10, initialization = "KmeansPLC", 
+mod <- mixed_LICORS(contCA_LCs, num.states_start = 10, initialization = "KmeansPLC", 
     max_iter = 20)
 
 plot(mod)
@@ -107,8 +107,11 @@ plot(mod)
   Georg M. Goerg \email{gmg@stat.cmu.edu}
 }
 \references{
-  Goerg and Shalizi (2012) available at
-  \url{arxiv.org/abs/1206.2398}
+  Goerg and Shalizi (2013), JMLR W\&CP 31:289-297. Also
+  available at \url{arxiv.org/abs/1211.3760}.
+
+  Goerg and Shalizi (2012). Available at
+  \url{arxiv.org/abs/1206.2398}.
 }
 \seealso{
   The main function in this package:

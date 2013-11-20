@@ -31,13 +31,13 @@
 #' par(op)
 #' \dontrun{
 #' LC_geom = setup_LC_geometry(speed=1, horizon=list(PLC = 2, FLC = 0), shape ="cone")
-#' bb = data2LCs(contCA00$observed, LC_coords = LC_geom$coords)
+#' bb = data2LCs(contCA00$observed, LC.coordinates = LC_geom$coordinates)
 #' image2(bb$PLC)
 #' image2(cor(bb$PLC), zlim = c(-1,1), col = "RdBu")
 #' mod_kk = kmeanspp(bb$PLC, k = 10)
 #' plot(bb$FLC, col = mod_kk$cluster, pch = ".", cex = 3)
 #' 
-#' ff = estimate_LC_pdfs(bb$FLC, state_vector = mod_kk$cluster, method = "nonparametric")
+#' ff = estimate_LC_pdfs(bb$FLC, states = mod_kk$cluster, method = "nonparametric")
 #' matplot(bb$FLC, ff, pch = ".", cex = 2)
 #' }
 #' 

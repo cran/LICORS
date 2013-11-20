@@ -2,15 +2,14 @@
 \alias{states2weight_matrix}
 \title{Converts label vector to 0/1 mixture weight matrix}
 \usage{
-states2weight_matrix(state_vector = NULL, nstates_total = NULL)
+states2weight_matrix(states, num.states.total = NULL)
 }
 \arguments{
-  \item{state_vector}{a vector of length \eqn{N} with the
-  state labels}
+  \item{states}{a vector of length \eqn{N} with the state
+  labels}
 
-  \item{nstates_total}{total number of states. If
-  \code{NULL}, then the maximum of \code{state_vector} is
-  chosen}
+  \item{num.states.total}{total number of states. If
+  \code{NULL}, then the maximum of \code{states} is chosen}
 }
 \description{
   Converts unique cluster assignment stored in a length

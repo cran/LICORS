@@ -2,10 +2,10 @@
 \alias{weight_matrix2states}
 \title{Returns unique state assignment from a (row-wise) weight matrix}
 \usage{
-weight_matrix2states(weight_matrix, rule = "argmax")
+weight_matrix2states(weight.matrix, rule = c("argmax", "sample"))
 }
 \arguments{
-  \item{weight_matrix}{an \eqn{N \times K} matrix}
+  \item{weight.matrix}{an \eqn{N \times K} matrix}
 
   \item{rule}{how do we choose the state given the weight
   matrix. \code{c("argmax", "sample")}.}
@@ -26,8 +26,8 @@ WW <- normalize(WW)
 WW
 weight_matrix2states(WW)
 weight_matrix2states(WW, "sample")
-# another 'sample' is in general different from previous conversion unless WW
-# is a 0/1 matrix
+# another 'sample' is in general different from previous conversion unless WW is
+# a 0/1 matrix
 weight_matrix2states(WW, "sample")
 }
 \seealso{

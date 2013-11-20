@@ -2,13 +2,14 @@
 \alias{initialize_states}
 \title{State initialization for iterative algorithms (randomly or variants of kmeans)}
 \usage{
-initialize_states(nstates = NULL, nsamples = NULL, method = "random", 
-    LCs = list(PLC = NULL, FLC = NULL))
+initialize_states(num.states = NULL, num.samples = NULL, method = c("random", 
+    "KmeansPLC", "KmeansFLC", "KmeansPLCFLC", "KmeansFLCPLC"), LCs = list(PLC = NULL, 
+    FLC = NULL))
 }
 \arguments{
-  \item{nstates}{number of states}
+  \item{num.states}{number of states}
 
-  \item{nsamples}{number of samples.}
+  \item{num.samples}{number of samples.}
 
   \item{method}{how to choose the labels: either uniformly
   at random from \eqn{\lbrace 1, \ldots, K \rbrace} or
@@ -29,7 +30,7 @@ initialize_states(nstates = NULL, nsamples = NULL, method = "random",
 x1 <- rnorm(1000)
 x2 <- rnorm(200, mean = 2)
 yy <- c(x1, x2)
-ss <- initialize_states(nstates = 2, nsamples = length(yy), method = "KmeansFLC", 
+ss <- initialize_states(num.states = 2, num.samples = length(yy), method = "KmeansFLC", 
     LCs = list(FLCs = yy))
 plot(yy, col = ss, pch = 19)
 points(x1, col = "blue")

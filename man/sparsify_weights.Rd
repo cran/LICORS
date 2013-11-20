@@ -2,14 +2,14 @@
 \alias{sparsify_weights}
 \title{Sparsify weights}
 \usage{
-sparsify_weights(weight_matrix_proposed, weight_matrix_current = NULL, 
+sparsify_weights(weight.matrix.proposed, weight.matrix.current = NULL, 
     penalty = "entropy", lambda = 0)
 }
 \arguments{
-  \item{weight_matrix_proposed}{\eqn{N \times K} weight
+  \item{weight.matrix.proposed}{\eqn{N \times K} weight
   matrix}
 
-  \item{weight_matrix_current}{\eqn{N \times K} weight
+  \item{weight.matrix.current}{\eqn{N \times K} weight
   matrix}
 
   \item{penalty}{type of penalty: \code{c("entropy",

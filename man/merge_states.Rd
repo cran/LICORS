@@ -2,7 +2,7 @@
 \alias{merge_states}
 \title{Merge several states into one}
 \usage{
-merge_states(states = NULL, weight_matrix = NULL)
+merge_states(states, weight.matrix)
 }
 \arguments{
   \item{states}{vector of length \eqn{1 \leq j \leq K} with
@@ -10,7 +10,7 @@ merge_states(states = NULL, weight_matrix = NULL)
   \ldots, K \rbrace} that should be merged; no repeating
   state labels allowed.}
 
-  \item{weight_matrix}{\eqn{N \times K} weight matrix}
+  \item{weight.matrix}{\eqn{N \times K} weight matrix}
 }
 \description{
   This function merges states \eqn{i_1, \ldots, i_j} into a

@@ -13,7 +13,7 @@
 #' }
 #' 
 #' 
-#' @param weight_matrix an \eqn{N \times K} matrix
+#' @param weight.matrix an \eqn{N \times K} matrix
 #' @param rule how do we choose the state given the weight matrix. 
 #' \code{c("argmax", "sample")}.
 #' @keywords manip array
@@ -29,14 +29,20 @@
 #' # WW is a 0/1 matrix
 #' weight_matrix2states(WW, "sample") 
 
-weight_matrix2states <- function(weight_matrix, rule = "argmax"){
-  if (rule == "argmax"){
-    states <- max.col(weight_matrix) # much faster than 'apply(weight_matrix, 1, which.max)'
-  } else if (rule == "sample"){
-    states <- apply(weight_matrix, 1, function(pp) sample.int(ncol(weight_matrix), size = 1, prob = pp, replace = TRUE ))
-  } else {
-    stop(paste("A rule", rule, "is not supported yet."))
-  }
-  
+weight_matrix2states <- function(weight.matrix, 
+                                 rule = c("argmax", "sample")) {
+  rule <- match.arg(rule)
+  switch(rule,
+         argmax = {
+           states <- max.col(weight.matrix) # much faster than 'apply(weight.matrix, 1, which.max)'
+         },
+         sample = {
+           # TODO: make this faster?
+           states <- apply(weight.matrix, 1, 
+                           function(pp) {
+                             sample.int(ncol(weight.matrix), size = 1, prob = pp, 
+                                        replace = TRUE)
+                             })
+         })
   invisible(states)
 }

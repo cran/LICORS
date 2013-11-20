@@ -12,7 +12,7 @@
 #' estimate, etc.) can not be obtained accurately anymore.  Then it is good to 
 #' remove state \eqn{j} and reassign its samples to other (close) states.
 #' 
-#' @param weight_matrix \eqn{N \times K} weight matrix
+#' @param weight.matrix \eqn{N \times K} weight matrix
 #' @param min minimum effective sample size to stay in the weight matrix
 #' @keywords method manip
 #' @export
@@ -23,14 +23,6 @@
 #' colSums(WW)
 #' remove_small_sample_states(WW, 20)
 
-remove_small_sample_states <- function(weight_matrix = NULL, min = NULL) {
-  
-  if (is.null(weight_matrix)) {
-    stop("You must provide the weight matrix.")
-  }
-  
-  if (is.null(min)){
-    stop("You must provide the minimum sample size 'min'.")
-  }
-  invisible( normalize(weight_matrix[, colSums(weight_matrix) > min]) )
+remove_small_sample_states <- function(weight.matrix, min) {
+  invisible( normalize(weight.matrix[, colSums(weight.matrix) > min]) )
 } 

@@ -2,13 +2,13 @@
 \alias{compute_LICORS_loglik}
 \title{Log-likelihood of LICORS model}
 \usage{
-compute_LICORS_loglik(weight_matrix = NULL, FLC_pdfs = NULL, lambda = 0, 
-    penalty = "entropy", q = 2, base = exp(1))
+compute_LICORS_loglik(weight.matrix, pdfs.FLC, lambda = 0, penalty = "entropy", q = 2, 
+    base = exp(1))
 }
 \arguments{
-  \item{weight_matrix}{\eqn{N \times K} weight matrix}
+  \item{weight.matrix}{\eqn{N \times K} weight matrix}
 
-  \item{FLC_pdfs}{an \eqn{N \times K} matrix containing the
+  \item{pdfs.FLC}{an \eqn{N \times K} matrix containing the
   estimates of all \eqn{K} FLC densities evaluated at all
   \eqn{N} sample FLCs.}
 
@@ -21,8 +21,8 @@ compute_LICORS_loglik(weight_matrix = NULL, FLC_pdfs = NULL, lambda = 0,
 
   \item{base}{logarithm base for the \code{"entropy"}
   penalty. Default: \code{base = 2}.  Any other real number
-  is allowed; if \code{base = "nstates"} then it will
-  internally assign it \code{base = ncol(weight_matrix)}.}
+  is allowed; if \code{base = "num.states"} then it will
+  internally assign it \code{base = ncol(weight.matrix)}.}
 
   \item{q}{exponent for \eqn{L_q} norm.}
 }

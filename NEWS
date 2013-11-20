@@ -1,10 +1,25 @@
-  	 CHANGES IN LICORS VERSION 0.1.5
+     CHANGES IN VERSION 0.2
+
+NEW FEATURES
+
+  - now also supports plain time series ('space_dim = 0')
+  - added 'predict.mixed_LICORS()' method
+  - changed to sparse 'Matrix' format whenever possible in the 'weight.matrix'
+  - changed naming convenstion for variabels from '_' separator to '.' separator; '_' is now exclusively 
+    used in function names
+
+BUG FIXES
+
+  - fixed bugs in computing horizon from coordinates
+  - cleaned up code for faster performance and better readability
+
+    CHANGES IN VERSION 0.1.5
 
 BUG FIXES
 
   - 'compute_LC_coords()' now also works for 'space_dim = 2' 
 
-    CHANGES IN LICORS VERSION 0.1.1
+    CHANGES IN VERSION 0.1.1
 
 NEW FEATURES
 
@@ -18,7 +33,7 @@ BUG FIXES
   since it called `dev.off()`.  Removed this line of code (and also removed
   `dev.off()` and some `par(op)` in other example code.
   
-		 CHANGES IN LICORS VERSION 0.1
+		 CHANGES IN VERSION 0.1
 
 NEW FEATURES
 

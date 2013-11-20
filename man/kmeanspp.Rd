@@ -2,7 +2,7 @@
 \alias{kmeanspp}
 \title{Kmeans++}
 \usage{
-kmeanspp(data, k = 1, start = "random", iter.max = 100, nstart = 10, ...)
+kmeanspp(data, k = 2, start = "random", iter.max = 100, nstart = 10, ...)
 }
 \arguments{
   \item{data}{an \eqn{N \times d} matrix, where \eqn{N} are

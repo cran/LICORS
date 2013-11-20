@@ -17,13 +17,13 @@
 #' @examples
 #' print(threshold(c(1,4,2,-1,10), min = 0))
 
-threshold = function(x, min = -Inf, max = Inf){
-  object <- x
+threshold <- function(x, min = -Inf, max = Inf){
+  
   if (min > -Inf){
-    object[object<min] = min
+    x[x < min] <- min
   } 
   if (max < Inf){
-    object[object>max] = max
+    x[x > max] <- max
   }
-  invisible(object)
+  invisible(x)
 }

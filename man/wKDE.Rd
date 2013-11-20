@@ -3,15 +3,15 @@
 \alias{wKDE}
 \title{Weighted kernel density estimator (wKDE)}
 \usage{
-wKDE(x, eval_points = x, weights = NULL, kernel = "gaussian", bw = "nrd0")
+wKDE(x, eval.points = x, weights = NULL, kernel = "gaussian", bw = "nrd0")
 
-mv_wKDE(x, eval_points = x, weights = NULL, kernel = "gaussian")
+mv_wKDE(x, eval.points = x, weights = NULL, kernel = "gaussian")
 }
 \arguments{
   \item{x}{data vector}
 
-  \item{eval_points}{points where the density should be
-  evaluated. Default: \code{eval_points = x}.}
+  \item{eval.points}{points where the density should be
+  evaluated. Default: \code{eval.points = x}.}
 
   \item{weights}{vector of weights. Same length as
   \code{x}. Default: \code{weights=NULL} - equal weight for
@@ -28,8 +28,8 @@ mv_wKDE(x, eval_points = x, weights = NULL, kernel = "gaussian")
   for other options.}
 }
 \value{
-  A vector of length \code{length(eval_points)} (or
-  \code{nrow(eval_points)}) with the probabilities of each
+  A vector of length \code{length(eval.points)} (or
+  \code{nrow(eval.points)}) with the probabilities of each
   point given the nonparametric fit on \code{x}.
 }
 \description{
@@ -54,9 +54,9 @@ lines(yy, wKDE(xx, yy), col = 2)
 ### Multivariate example ###
 XX <- matrix(rnorm(100), ncol = 2)
 YY <- matrix(runif(40), ncol = 2)
-mm <- mv_wKDE(XX)
+dens.object <- mv_wKDE(XX)
 
-plot(mm)
+plot(dens.object)
 points(mv_wKDE(XX, YY), col = 2, ylab = "")
 }
 \keyword{distribution}

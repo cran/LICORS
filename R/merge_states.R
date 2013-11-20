@@ -9,7 +9,7 @@
 #' @param states vector of length \eqn{1 \leq j \leq K} with the 
 #' states \eqn{i_1, \ldots, i_j \subset \lbrace 1, \ldots, K \rbrace} 
 #' that should be merged; no repeating state labels allowed.
-#' @param weight_matrix \eqn{N \times K} weight matrix
+#' @param weight.matrix \eqn{N \times K} weight matrix
 #' @keywords manip array
 #' @export
 #' @examples
@@ -28,16 +28,11 @@
 #' image2(WW_new, main = paste(ncol(WW_new), "states"), legend = FALSE)
 #' 
 
-
-merge_states <- function(states = NULL, weight_matrix = NULL) {
-    if (is.null(states)) {
-      stop("You must provide two states.")
-    }
-    states <- c(states)
-    if (length(unique(states)) < length(states)) {
-      stop("You must provide different states.")
-    }
-    weight_matrix[, states[1]] <- rowSums(weight_matrix[, states])
-    weight_matrix <- weight_matrix[, -states[-1]]
-    invisible(weight_matrix)
-  } 
+merge_states <- function(states, weight.matrix) {
+  if (any(duplicated(states))) {
+    stop("You must provide different states.")
+  }
+  weight.matrix[, states[1]] <- rowSums(weight.matrix[, states])
+  weight.matrix <- weight.matrix[, -states[-1]]
+  invisible(weight.matrix)
+} 

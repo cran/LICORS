@@ -1,164 +1,138 @@
 #' @title Mixed LICORS: An EM-like Algorithm for Predictive State Space Estimation
 #'
-#' @description 
-#' \code{mixed_LICORS} is the core function of this package as it estimates the
-#' ``parameters'' in the model for the spatio-temporal process.
-#' \deqn{
-#' P(X_1, \ldots, X_{\tilde{N}}) \propto \prod_{i=1}^{N} P(X_i \mid \ell^{-}_i) 
-#' =  \prod_{i=1}^{N} P(X_i \mid \epsilon(\ell^{-}_i)) .
-#' }
+#' @description \code{mixed_LICORS} is the core function of this
+#' package as it estimates the ``parameters'' in the model for the
+#' spatio-temporal process.  \deqn{ P(X_1, \ldots, X_{\tilde{N}})
+#' \propto \prod_{i=1}^{N} P(X_i \mid \ell^{-}_i) = \prod_{i=1}^{N}
+#' P(X_i \mid \epsilon(\ell^{-}_i)) .  }
 #' 
-#' @param LCs list of PLCs and FLCs matrices (see output of 
+#' @param LCs list of PLCs and FLCs matrices (see output of
 #' \code{\link{data2LCs}} for details and formatting).
-#' @param nstates_start number of states to start the EM algorithm
-#' @param initialization a a) character string, b) vector, or c) matrix. a) 
-#' results \code{nstates_start} many states initialized by passing the character
-#'  string as \code{method} argument of \code{\link{initialize_states}}; 
-#' if b) the vector will be taken as initial state labels;
-#' if c) the matrix will be taken as initial weights. Note that for both b) and c)
-#' \code{nstates_start} will be ignored.
-#' \eqn{k = 1, \ldots, K} of PLC \eqn{i}
-#' @param max_iter maximum number of iterations in the EM
-#' @param verbose logical; if \code{TRUE} it prints output in the console
-#' as the EM is running
-#' @param sparsity what type of sparsity (currently not implemented)
-#' @param lambda penalization parameter; larger lambda gives sparser weights
-#' @param loss an R function specifying the loss for cross-validation (CV). 
-#' Default: mean squared error (MSE), i.e. 
-#' \code{loss = function(x, xhat) mean((x-xhat)^2)}
-#' @param alpha significance level to stop testing. Default: \code{alpha=0.01}
-#' @param seed set seed for reproducibility. Default: \code{NULL}. If 
-#' \code{NULL} it sets a random seed and then returns this seed in the output.
-#' @param CV_train_ratio how much of the data should be training data.
-#' Default: \code{0.75}, i.e. \eqn{75\%} of data is for training
-#' @param CV_split_random indicator for splitting data randomly in training and
-#'  test data (\code{TRUE}) or to use first part (in time) as training, rest as 
-#'  test (\code{FALSE}; default).
-#' @param method a list of length \eqn{2} with arguments \code{PLC} and 
-#' \code{FLC} for the method of density estimation in each 
-#' (either \code{"normal"} or \code{"nonparametric"}).
+#' @param num.states.init number of states to start the EM algorithm
+#' @param initialization a a) character string, b) vector, or c)
+#' matrix. a) results \code{num.states.init} many states initialized
+#' by passing the character string as \code{method} argument of
+#' \code{\link{initialize_states}}; if b) the vector will be taken as
+#' initial state labels; if c) the matrix will be taken as initial
+#' weights. Note that for both b) and c) \code{num.states.init} will
+#' be ignored.  \eqn{k = 1, \ldots, K} of PLC \eqn{i}
+#' @param control a list of control settings for the EM algorithm. 
+#' See \code{\link{complete_LICORS_control}} for details.
 #' @return
 #' An object of class \code{"LICORS"}.
 #' @keywords nonparametric cluster multivariate distribution
 #' @export
-#' @seealso \code{\link{plot.mixed_LICORS}}, \code{\link{summary.mixed_LICORS}}
+#' @seealso \code{\link{plot.mixed_LICORS}},
+#' \code{\link{summary.mixed_LICORS}}
 #' @examples
 #' \dontrun{
 #' data(contCA00)
 #'  
-#' LC_geom = setup_LC_geometry(speed=1, horizon=list(PLC = 2, FLC = 0), shape ="cone")
-#' bb = data2LCs(t(contCA00$observed), LC_coords = LC_geom$coords)
+#' LC_geom = setup_LC_geometry(speed = 1,
+#'                             horizon = list(PLC = 2, FLC = 0),
+#'                             shape ="cone")
+#' bb = data2LCs(t(contCA00$observed), LC.coordinates = LC_geom$coordinates)
 #' 
-#' mm = mixed_LICORS(bb, nstates_start = 10, init = "KmeansPLC", max_iter = 20)
+#' mm = mixed_LICORS(bb, num.states.init = 15, init = "KmeansPLC", 
+#'                   control = list(max.iter = 50, lambda = 0.001))
 #' plot(mm)
-#' ff_new = estimate_LC_pdfs(bb$FLC, weight_matrix = mm$conditional_state_probs, 
+#' ff_new = estimate_LC_pdfs(bb$FLC,
+#'                           weight.matrix = mm$conditional_state_probs, 
 #'                           method = "nonparametric")
 #' matplot(bb$FLC, ff_new, pch = ".", cex = 2)
 #'}
 #'
 
-mixed_LICORS <-
-function(LCs = list(PLC = PLCs, FLC = FLCs, dim = list(original = NULL, truncated = NULL)),
-         nstates_start=NULL,
-         initialization=NULL, max_iter=500, 
-         method=list(PLC = "normal", FLC = "nonparametric"), 
-         alpha=0.01, 
-         seed=NULL, verbose=TRUE, CV_train_ratio = 0.75, 
-         CV_split_random = FALSE, 
-         sparsity = "stochastic", 
-         lambda = 0,
-         loss = function(x, xhat) mean((x-xhat)^2)){
+mixed_LICORS <- function(LCs = list(PLC = NULL, FLC = NULL,
+                                    dim = list(original = NULL, 
+                                               truncated = NULL)),
+                         num.states.init = NULL,
+                         initialization = NULL,
+                         control = list(max.iter = 500, alpha = 0.01,
+                                        trace = 0, lambda = 0,
+                                        sparsity = "stochastic",
+                                        CV.split.random = FALSE,
+                                        CV.train.ratio = 0.75, seed = NULL,
+                                        loss = function(x, xhat) 
+                                          mean((x - xhat)^2),
+                                        estimation.method = 
+                                          list(PLC = "normal",
+                                               FLC = "nonparametric"))) {
   
-  FLCs = LCs$FLC
-  PLCs = LCs$PLC
-  NN = nrow(PLCs)
+  control <- complete_LICORS_control(control)
+  set.seed(control$seed)
+  if (length(dim(LCs$FLC)) == 0) {
+    LCs$FLC <- cbind(LCs$FLC)
+  }
+  NN <- nrow(LCs$PLC)
   
   if (is.null(LCs$dim)){
-    LCs$dim = list(original = NULL, truncated = c(1, NN))  
+    LCs$dim <- list(original = NULL, truncated = c(1, NN))  
   }
   
-  
-  if (is.null(seed)){
-    seed = sample.int(10^6, 1)
-  }
-  set.seed(seed)
-  
-  if (is.null(initialization) & is.null(nstates_start)){
+  if (is.null(initialization) & is.null(num.states.init)){
     stop("You must provide either 
          - an integer specifying the number of states
          - a vector with the initial state space labels
-         - or a matrix with the initial weights_
+         - or a matrix with the initial weights
          ")
   }
-  state_vector = rep(NA, NN)
+  states <- rep(NA, NN)
   
-  if (CV_split_random){
-    sel_train = sample.int(NN, size = floor(CV_train_ratio * NN), replace = FALSE)
+  if (control$CV.split.random){
+    train.index <- sample.int(NN, size = floor(control$CV.train.ratio * NN), 
+                              replace = FALSE)
   } else {
-    sel_train = 1:(floor(CV_train_ratio * NN))
+    train.index <- seq_len(floor(control$CV.train.ratio * NN))
   }
   
-  
-  ntrain = length(sel_train)
-  ntest = NN-ntrain
-  
-  PLC_train = PLCs[sel_train,]
-  FLC_train = cbind(FLCs[sel_train,])
-  
-  PLC_test = PLCs[-sel_train,]
-  FLC_test = cbind(FLCs[-sel_train,])
-    
+  train.data <- list(PLC = LCs$PLC[train.index, ],
+                     FLC = cbind(LCs$FLC[train.index, ]))
+  test.data <- list(PLC = LCs$PLC[-train.index, ],
+                    FLC = cbind(LCs$FLC[-train.index, ]))
+  num.samples <- c("train" = length(train.index),
+                   "test" = NN - length(train.index),
+                   "all" = NN)
   #####################################################
   #### initialize variables to keep track of EM updates
   #####################################################
-  
   # mixture weight penalty
-  penalty = matrix(NA, nrow = max_iter, ncol = 2)
-  colnames(penalty)  = c("1-L2", "entropy")
+  penalty <- matrix(NA, nrow = control$max.iter, ncol = 4)
+  colnames(penalty) <- c("L2", "entropy", "nec", "nec.weighted")
   
-  loglik_train = rep(-Inf, max_iter)
-  loglik_train_weighted = rep(-Inf, max_iter)
-  loglik_train_weighted_only_update = rep(-Inf, max_iter)
-  
-  loglik_test = rep(-Inf, max_iter)
-  loglik_test_weighted = rep(-Inf, max_iter)
-  
-  MSE_train = rep(NA, max_iter)
-  MSE_train_weighted = rep(NA, max_iter)
-  MSE_test = rep(NA, max_iter)
-  MSE_test_weighted = rep(NA, max_iter)
-  
-  # negative entropy criterion (NEC) for choosing number of clusters
-  NEC = rep(NA, max_iter)
-  NEC_weighted = rep(NA, max_iter)  
-  
-  weights_train_temp = NULL
+  loglik <- matrix(-Inf, ncol = 5, nrow = control$max.iter)
+  colnames(loglik) <- c("train", "train.weighted", "train.weighted.update",
+                        "test", "test.weighted")
+  MSE <- matrix(NA, ncol = 4, nrow = control$max.iter)
+  colnames(MSE) <- c("train", "train.weighted", "test", "test.weighted")
+
+  weight.matrices <- list(train = list(tmp = NULL, final = NULL, opt = NULL),
+                          test = list(tmp = NULL, final = NULL, opt = NULL))
   ##########################
   #### Initialize states ###
   ##########################
   if (is.character(initialization)) {   
-    if (is.null(nstates_start)){
+    if (is.null(num.states.init)){
       stop("You must provide the number of maximum states to start with.")
     } else {
       # assign states by kmeans or randomly
-      state_vector[sel_train] <- initialize_states(nstates = nstates_start, 
-                                                   nsamples = ntrain, 
-                                                   method = initialization,
-                                                   LCs = list(PLCs = PLC_train,
-                                                              FLCs = FLC_train))
-                                                   
+      states[train.index] <-
+          initialize_states(num.states = num.states.init, 
+                            method = initialization,
+                            LCs = train.data)                       
       # state vector initialization for test data is irrelevant; but need
       # the full vector later
-      state_vector[-sel_train] = initialize_states(nstates = nstates_start,
-                                                   nsamples = ntest,
-                                                   method = "random")
+      states[-train.index] <-
+          initialize_states(num.states = num.states.init,
+                            num.samples = num.samples["test"],
+                            method = "random")
     }
   } else {
     if (is.vector(initialization)){
-      state_vector <- initialization
+      states <- initialization
     } else if (is.matrix(initialization)){
-      weights_train_temp <- initialization[sel_train, ]
-      state_vector <- weight_matrix2states(weights_train_temp)
+      weight.matrices$train$tmp <- initialization[train.index, ]
+      states <- weight_matrix2states(weight.matrices$train$tmp)
     } else {
       stop("Initial states must be either a 
            i) character string describing the initialization method,
@@ -167,376 +141,432 @@ function(LCs = list(PLC = PLCs, FLC = FLCs, dim = list(original = NULL, truncate
     }
     
   }
-  state_vector_train = state_vector[sel_train] 
-  state_vector_test = state_vector[-sel_train]
+  state.vector <- list(train = states[train.index],
+                       test = states[-train.index])
   
-  if (is.null(weights_train_temp)){
-    weights_train_temp = states2weight_matrix(state_vector = state_vector_train, 
-                                              nstates_total = nstates_start)
+  if (is.null(weight.matrices$train$tmp)){
+    weight.matrices$train$tmp <-
+        states2weight_matrix(states = state.vector$train, 
+                             num.states.total = num.states.init)
   }
-  nstates_start = max(state_vector)
+  num.states <- c(init = max(states), current = max(states),
+                  opt = NA, final = NA)
 
-  FLC_pdfs_train_one_cluster = estimate_LC_pdf_given_state(state_label = 1, 
-                                                           LCs=FLC_train, 
-                                                           state_vector = rep(1, nrow(FLC_train)),
-                                                           method = method[["FLC"]])
-  
-  loglik_one_cluster = compute_LICORS_loglik(weight_matrix=1, 
-                                             FLC_pdfs = cbind(FLC_pdfs_train_one_cluster))
-  
-
-  
-  penalty[1,"1-L2"] = compute_mixture_penalty(weights_train_temp, "1-Lq", q = 2)
-  penalty[1,"entropy"]= compute_mixture_penalty(weights_train_temp, "entropy", base = "nstates")
-  
-  nstates_start = ncol(weights_train_temp)
-
-  FLC_pdfs_train = estimate_LC_pdfs(LCs = FLC_train, 
-                                    weight_matrix = weights_train_temp,
-                                    state_vector = NULL, #state_vector_train,
-                                    method=method[["FLC"]])
-
-  PLC_pdfs_train = estimate_LC_pdfs(LCs = PLC_train, 
-                                    weight_matrix = weights_train_temp,
-                                    state_vector = NULL, #state_vector_train,
-                                    method=method[["PLC"]])
-  
-  predictions_train = predict_FLC_given_PLC(state_vector = NULL, 
-                                            FLC_train = FLC_train, 
-                                            FLCs_train_pdf = NULL,
-                                            type = "mean", 
-                                            weight_matrix_train = weights_train_temp)
-  
-  predictions_train_weighted = predict_FLC_given_PLC(state_vector = NULL, 
-                                                     FLC_train = FLC_train,
-                                                     FLCs_train_pdf = NULL,
-                                                     type = "weightedmean", 
-                                                     weight_matrix_train = weights_train_temp)
-  
-  MSE_train[1] = loss(FLC_train, predictions_train)
-  MSE_train_weighted[1] = loss(FLC_train, predictions_train_weighted)
-  
-  PLC_pdfs_test = estimate_LC_pdfs(LCs = PLC_train, 
-                                   weight_matrix = weights_train_temp,
-                                   state_vector = NULL,
-                                   method=method[["PLC"]],
-                                   eval_LCs = PLC_test)
-
-  weights_test = estimate_state_probs(weight_matrix = weights_train_temp,
-                                      state_vector = NULL, 
-                                      PLC_pdfs = PLC_pdfs_test, 
-                                      FLC_pdfs = NULL,
-                                      nstates_total = nstates_start)
-
-  state_vector_test = weight_matrix2states(weights_test)
-  
-  predictions_test_weighted = predict_FLC_given_PLC(state_vector = NULL, 
-                                                    FLC_train = FLC_train,
-                                                    FLCs_train_pdf = NULL,
-                                                    type = "weightedmean", 
-                                                    weight_matrix_train = weights_train_temp,
-                                                    weight_matrix_test = weights_test)
+  pdfs <- list()
+  pdfs$FLC$train$one.cluster <- 
+    estimate_LC_pdf_state(state = 1,
+                          states = rep(1, num.samples["train"]),
+                          LCs = train.data$FLC,
+                          method = control$estimation.method[["FLC"]])
+  loglik.one.state <-
+      compute_LICORS_loglik(weight.matrix = 1,
+                            pdfs.FLC = cbind(pdfs$FLC$train$one.cluster))
     
-  
-  predictions_test = predict_FLC_given_PLC(state_vector = NULL, 
-                                           FLC_train = FLC_train,
-                                           FLCs_train_pdf = NULL,
-                                           type = "mean", 
-                                           weight_matrix_train = weights_train_temp,
-                                           weight_matrix_test = weights_test)
-  
-  MSE_test[1] = loss(FLC_test, predictions_test)
-  MSE_test_weighted[1] = loss(FLC_test, predictions_test_weighted)
-  
-  loglik_train_weighted[1] = compute_LICORS_loglik(FLC_pdfs_train, weights_train_temp, lambda = lambda)
-  loglik_train[1] = loglik_train_weighted[1]
-  loglik_train_weighted_only_update[1] = loglik_train_weighted[1]
-  
-  FLC_pdfs_test = estimate_LC_pdfs(LCs = FLC_train, 
-                                   weight_matrix = weights_train_temp,
-                                   state_vector = NULL,
-                                   method=method[["FLC"]],
-                                   eval_LCs = FLC_test)
-  
-  loglik_test_weighted[1] = compute_LICORS_loglik(FLC_pdfs_test, weights_test, lambda = lambda)
-  loglik_test[1] = compute_LICORS_loglik(FLC_pdfs_test, 
-                                         states2weight_matrix(state_vector_test, 
-                                                              nstates_total = nstates_start), 
-                                         lambda = lambda)
-  
-  weights_final = weights_train_temp
-  prediction_final = predictions_test
-  nstates_final = nstates_start
-  
-  weights_best = weights_train_temp
-  prediction_best = predictions_test
-  prediction_best_weighted = predictions_test
-  weights_best_test = weights_test
-  iter_best = 1
-  stop.iterations = FALSE
-  temp_converged = FALSE
-  overall_converged = FALSE
-  
-  merging_times = c()
+  penalty[1, "L2"] <- compute_mixture_penalty(weight.matrices$train$tmp,
+                                              "Lq", q = 2)
+  penalty[1, "entropy"] <- compute_mixture_penalty(weight.matrices$train$tmp,
+                                                   "entropy",
+                                                   base = "num.states")
+  num.states["init"] <- ncol(weight.matrices$train$tmp)
 
-  for (ii in 2:max_iter){
-    merged = FALSE
-    temp_merge = FALSE
-    temp_more.sparse = TRUE
+  pdfs$FLC$train <- estimate_LC_pdfs(LCs = train.data$FLC, 
+                                     weight.matrix =
+                                       weight.matrices$train$tmp,
+                                     method = control$estimation.method[["FLC"]])
+  pdfs$PLC$train <- estimate_LC_pdfs(LCs = train.data$PLC, 
+                                     weight.matrix =
+                                       weight.matrices$train$tmp,
+                                     method = control$estimation.method[["PLC"]])
+  # predictions are stored in a list, not a matrix, since the could be
+  # multidimensional themselves
+  prediction <- list()
+  prediction$FLC$train <-
+    predict_FLC_given_PLC(train = list(data = list(FLC = train.data$FLC, 
+                                                   PLC = NULL),
+                                       weight.matrix = weight.matrices$train$tmp),
+                          test = list(weight.matrix = weight.matrices$train$tmp),
+                          type = "mean")
+  prediction$FLC$train.weighted <-
+    predict_FLC_given_PLC(train = list(data = list(FLC = train.data$FLC),
+                                       weight.matrix = weight.matrices$train$tmp),
+                          test = list(weight.matrix = weight.matrices$train$tmp),
+                          type = "weighted.mean")
+  
+  MSE[1, "train"] <- control$loss(train.data$FLC, prediction$FLC$train)
+  MSE[1, "train.weighted"] <- control$loss(train.data$FLC,
+                                   prediction$FLC$train.weighted)
+  
+  pdfs$PLC$test <- estimate_LC_pdfs(LCs = train.data$PLC, 
+                                    weight.matrix =
+                                      weight.matrices$train$tmp,
+                                    method = control$estimation.method[["PLC"]],
+                                    eval.LCs = test.data$PLC)
+  weight.matrices$test$tmp <-
+      estimate_state_probs(weight.matrix = weight.matrices$train$tmp,
+                           pdfs = list(PLC = pdfs[["PLC"]][["test"]], FLC = NULL),
+                           num.states = num.states["init"])
+  
+  state.vector$test <- weight_matrix2states(weight.matrices$test$tmp)
+  prediction$FLC$test.weighted <-
+    predict_FLC_given_PLC(train = list(data = list(FLC = train.data$FLC),
+                                       weight.matrix = weight.matrices$train$tmp),
+                          test = list(weight.matrix = weight.matrices$test$tmp),
+                          type = "weighted.mean")
+  prediction$FLC$test <-
+    predict_FLC_given_PLC(train = list(data = list(FLC = train.data$FLC),
+                                       weight.matrix = weight.matrices$train$tmp),
+                          test = list(weight.matrix = weight.matrices$test$tmp),
+                          type = "mean")
+  
+  MSE[1, "test"] <- control$loss(test.data$FLC, prediction$FLC$test)
+  MSE[1, "test.weighted"] <- control$loss(test.data$FLC, prediction$FLC$test.weighted)
     
-    iter_final = ii
-    nstates_temp = ncol(weights_train_temp)
+  loglik[1, c("train.weighted", "train", "train.weighted.update")] <- 
+    compute_LICORS_loglik(pdfs$FLC$train, 
+                          weight.matrices$train$tmp, 
+                          lambda = control$lambda)
 
-    effective_nsamples = colSums(weights_train_temp)
-    min_nsamples_per_state = ncol(PLC_train) + 1
+  pdfs$FLC$test <- estimate_LC_pdfs(LCs = train.data$FLC, 
+                                    weight.matrix =
+                                      weight.matrices$train$tmp,
+                                    method = control$estimation.method[["FLC"]],
+                                    eval.LCs = test.data$FLC)
+  
+  loglik[1, "test.weighted"] <-
+      compute_LICORS_loglik(weight.matrices$test$tmp, 
+                            pdfs$FLC$test, 
+                            lambda = control$lambda)
+  loglik[1, "test"] <-
+      compute_LICORS_loglik(states2weight_matrix(state.vector$test,
+                                                 num.states.total =
+                                                   num.states["init"]),
+                            pdfs$FLC$test,
+                            lambda = control$lambda)
+  weight.matrices$train$final <- weight.matrices$train$tmp
+  prediction$final <- prediction$FLC$test
+  
+  num.iter <- c(opt = 1, final = NA, opt = NA, max = control$max.iter)
+  
+  weight.matrices$train$opt <- weight.matrices$train$tmp
+  prediction$opt <- prediction$FLC$test
+  prediction$opt.weighted <- prediction$FLC$test
+  
+  weight.matrices$test$opt <- weight.matrices$test$tmp
+ 
+  stop.iterations <- FALSE
+  converged.tmp <- FALSE
+  overall.converged <- FALSE
+  
+  merging.iter = c()
+  if (control$trace > 0) {
+    cat("Starting EM iterations \n")
+  }
+  for (ii in 2:control$max.iter){
+    if (control$trace > 0) {
+      cat("Start iteration", ii, "\n")
+    }
+    merged <- FALSE
+    do.merge.tmp <- FALSE
+    more.sparse.tmp <- TRUE
     
-    # E step  
-    weights_train_temp = estimate_state_probs(weight_matrix = weights_train_temp,
-                                              state_vector = NULL, 
-                                              PLC_pdfs = PLC_pdfs_train, 
-                                              FLC_pdfs = FLC_pdfs_train,
-                                              nstates_total = ncol(FLC_pdfs_train))
-
-    if (any("deterministic" == sparsity) && lambda != 0){
-      if (!merged && ii > 1000){#} && ii < max_iter){
-        if (verbose){
+    iter.final <- ii
+    num.states.tmp <- ncol(weight.matrices$train$tmp)
+    # E step
+    weight.matrices$train$tmp <- 
+      estimate_state_probs(weight.matrix = weight.matrices$train$tmp,
+                           pdfs = list(PLC = pdfs$PLC$train, 
+                                       FLC = pdfs$FLC$train))
+    if (any("deterministic" == control$sparsity) && control$lambda != 0){
+      if (!merged && ii > 1000){#} && ii < control$max.iter){
+        if (control$trace > 0){
           cat("sparsity enforced! \n")
-          cat("Penalty before:", round(compute_mixture_penalty(weights_train_temp, "entropy", base = "nstates")*100,4), "% \n")
+          cat("Penalty before:",
+              round(compute_mixture_penalty(weight.matrices$train$tmp,
+                                            "entropy",
+                                            base = "num.states") * 100, 1),
+              "% \n")
         }
-        #weights_train_temp = LICORS_adjust_weights(weights_final, weights_train_temp, lambda = lambda)
-        weights_train_temp = sparsify_weights(weights_train_temp,  NULL, lambda = lambda)
-  	    if (verbose){
-          cat("Penalty after:", round(compute_mixture_penalty(weights_train_temp, "entropy", base = "nstates")*100,4), "% \n")
+        weight.matrices$train$tmp <-
+            sparsify_weights(weight.matrices$train$tmp,
+                             NULL, lambda = control$lambda)
+  	    if (control$trace > 0){
+          cat("Penalty after:",
+              round(compute_mixture_penalty(weight.matrices$train$tmp,
+                                            "entropy",
+                                            base = "num.states") * 100, 1),
+              "% \n")
         }
       }
     }
 
     if (merged) {
-      PLC_pdfs_train = estimate_LC_pdfs(LCs = PLC_train, 
-                                        weight_matrix = weights_train_temp,
-                                        state_vector = NULL, #state_vector_train,
-                                        method=method[["PLC"]])
+      pdfs$PLC$train <- estimate_LC_pdfs(LCs = train.data$PLC, 
+                                         weight.matrix =
+                                           weight.matrices$train$tmp,
+                                         method = control$estimation.method[["PLC"]])
       
-      FLC_pdfs_train = estimate_LC_pdfs(LCs = FLC_train, 
-                                        weight_matrix = weights_train_temp,
-                                        state_vector = NULL, #state_vector_train,
-                                        method=method[["FLC"]])
-        
+      pdfs$FLC$train <- estimate_LC_pdfs(LCs = train.data$FLC, 
+                                         weight.matrix =
+                                           weight.matrices$train$tmp,
+                                         method = control$estimation.method[["FLC"]])
       # M step
-      weights_train_temp = estimate_state_probs(weight_matrix = weights_train_temp,
-                                                state_vector = NULL, 
-                                                PLC_pdfs = PLC_pdfs_train, 
-                                                FLC_pdfs = FLC_pdfs_train,
-                                                nstates_total = ncol(FLC_pdfs_train))
-    }
-    
-    if (!merged){
+      weight.matrices$train$tmp <-
+        estimate_state_probs(weight.matrix = weight.matrices$train$tmp,
+                             pdfs = list(PLC = pdfs$PLC$train,
+                                         FLC = pdfs$FLC$train))
+      max.weight.diff <- 1
+    } else {  # not merged
       # maximum weight difference
-      max_weight_diff = max( sqrt( rowMeans( (weights_train_temp - weights_final)^2 ) ) )
-    } else {
-      max_weight_diff = 1
+      max.weight.diff <-
+          max(sqrt(rowMeans((weight.matrices$train$tmp - weight.matrices$train$final)^2)))
     }
 
-    if (max_weight_diff < 10^(-2)){
-      temp_converged = TRUE
+    if (max.weight.diff < 10^(-3)){
+      converged.tmp <- TRUE
     }
     
-    if (temp_converged) {
-      temp_merge = TRUE
-      if (any("deterministic" == sparsity) && lambda != 0){
-        temp_merge = FALSE
-        temp_old_penalty = penalty[ii-1,"entropy"]
-        if (verbose){
+    if (converged.tmp) {
+      do.merge.tmp <- TRUE
+      if (any("deterministic" == control$sparsity) && control$lambda != 0){
+        do.merge.tmp <- FALSE
+        penalty.old.tmp <- penalty[ii - 1, "entropy"]
+        if (control$trace > 0){
           cat("converged and sparsity enforced! \n")
-          cat("Penalty before:", round(temp_old_penalty*100,4), "% \n")
+          cat("Penalty before:", round(penalty.old.tmp * 100, 4), "% \n")
         }
-        # sparsity
-        weights_train_temp = sparsify_weights(weights_train_temp, NULL, lambda=lambda)        
-        temp_new_penalty = compute_mixture_penalty(weights_train_temp, "entropy")
-        
-        if (temp_old_penalty*0.999 > temp_new_penalty){
-          temp_more.sparse = TRUE
-        } else {
-          temp_more.sparse = FALSE
-        }    
-        
-        if (verbose){
-          cat("Penalty after:", round(temp_new_penalty*100,4), "% \n")
+        if (control$lambda > 0) {
+          # sparsity
+          weight.matrices$train$tmp <- 
+            sparsify_weights(weight.matrices$train$tmp, NULL,
+                             lambda = control$lambda)        
+        }
+        penalty.new.tmp <- compute_mixture_penalty(weight.matrices$train$tmp,
+                                                    "entropy")
+
+        more.sparse.tmp <- (penalty.old.tmp >= penalty.new.tmp)
+        if (control$trace > 0){
+          cat("Penalty after:", round(penalty.new.tmp * 100, 4), "% \n")
         }
         
-        max_weight_diff = max( sqrt( rowMeans( (weights_train_temp - weights_final)^2 ) ) )
+        max.weight.diff <-
+          max(sqrt(rowMeans((weight.matrices$train$tmp - weight.matrices$train$final)^2)))
         
-        if (max_weight_diff < 10^(-2) 
-            || ( any( abs(loglik_train_weighted[ii-1]-loglik_train_weighted[ii - 1:min(ii-1,10)]) < 10^(-6)) && loglik_train_weighted[ii-1] > -Inf)) { 
-          temp_converged = TRUE
+        if (max.weight.diff < 10^(-3.01) 
+            || ( any( abs(loglik[ii - 1, "train.weighted"] -
+                          loglik[ii - seq_len(min(ii - 1, 10)),
+                                 "train.weighted"]) < 10^(-6)) &&
+                loglik[ii - 1, "train.weighted"] > -Inf)) { 
+          converged.tmp <- TRUE
         }
       }
     }
     
-    
-    if (temp_more.sparse == FALSE){
+    if (!more.sparse.tmp){
       # if new sparser weights are actually not sparse, then merge clusters
-      temp_merge = TRUE
+      do.merge.tmp <- TRUE
     }
-    if (verbose) {    
-      cat("Solution more sparse", temp_more.sparse, "\n")
-      cat("EM converged temporarily", temp_converged, "\n")
-      cat("Should states be merged", temp_merge, "\n")
+    if (control$trace > 0) {    
+      cat("Solution more sparse:", more.sparse.tmp, "\n")
+      cat("EM converged temporarily:", converged.tmp, "\n")
+      cat("Should states be merged:", do.merge.tmp, "\n")
     }
-    loglik_train_weighted[ii] = compute_LICORS_loglik(FLC_pdfs_train, weights_train_temp, lambda = lambda)
-    loglik_train[ii] = compute_LICORS_loglik(FLC_pdfs_train, 
-                                             states2weight_matrix(weight_matrix2states(weights_train_temp), 
-                                                                nstates_total = nstates_temp),
-                                             lambda = lambda )
+    loglik[ii, "train.weighted"] <-
+      compute_LICORS_loglik(pdfs$FLC$train, weight.matrices$train$tmp,
+                            lambda = control$lambda)
+    # TODO: make this state conversion in one step; not calling two functions
+    loglik[ii, "train"] <-
+        compute_LICORS_loglik(pdfs$FLC$train, 
+                              states2weight_matrix(weight_matrix2states(weight.matrices$train$tmp),
+                                                   num.states.total =
+                                                     num.states.tmp),
+                              lambda = control$lambda )
     
-    penalty[ii,"1-L2"]= compute_mixture_penalty(weights_train_temp, "1-Lq", q = 2)
-    penalty[ii,"entropy"]= compute_mixture_penalty(weights_train_temp, "entropy", base = "nstates")    
+    penalty[ii,"L2"] <- compute_mixture_penalty(weight.matrices$train$tmp,
+                                                  "Lq", q = 2)
+    penalty[ii,"entropy"] <- compute_mixture_penalty(weight.matrices$train$tmp, 
+                                                     "entropy",
+                                                     base = "num.states")
     
-    NEC[ii] = log(nstates_temp) * penalty[ii, "entropy"] / (loglik_train[ii] - loglik_one_cluster)
-    NEC_weighted[ii] =  log(nstates_temp) * penalty[ii, "entropy"] / (loglik_train_weighted[ii] - loglik_one_cluster)
+    penalty[ii, "nec"] <- 
+      log(num.states.tmp) * penalty[ii, "entropy"] /
+        (loglik[ii, "train"] - loglik.one.state)
+    penalty[ii, "nec.weighted"] <- log(num.states.tmp) *
+        penalty[ii, "entropy"] /
+            (loglik[ii, "train.weighted"] - loglik.one.state)
     
-    if (temp_merge) {
-        AA = estimate_state_adj_matrix(FLC_pdfs = FLC_pdfs_train, 
-                                          alpha = NULL, 
-                                          distance = function(f,g) {
-                                            return(mean(abs(f-g))) })
+    if (do.merge.tmp) {
+        AA <- estimate_state_adj_matrix(pdfs.FLC = pdfs$FLC$train, 
+                                        alpha = NULL, 
+                                        distance = 
+                                          function(f, g) {
+                                            return(mean(abs(f - g))) })
         
-        diag(AA) = 0 # for norm and testing (similarity)
-        # if EM converged, and no merging is possible, then stop the iterations
-        if (all(AA < alpha)){
+        diag(AA) <- 0 # for norm and testing (similarity)
+        # if EM converged and no merging is possible, then stop iterations
+        if (all(AA < control$alpha)){
           #if (TRUE){
-          stop.iterations = TRUE
+          stop.iterations <- TRUE
         } else {
-          merged = TRUE
-          merging_times = c(merging_times, ii)
-          weights_train_temp = merge_states(which(AA == max(AA), arr.ind = TRUE)[1:2],
-                                                weights_train_temp)
+          merged <- TRUE
+          merging.iter <- c(merging.iter, ii)
+          weight.matrices$train$tmp <- merge_states(which(AA == max(AA),
+                                                          arr.ind = TRUE)[1:2],
+                                                    weight.matrices$train$tmp)
           
-          temp_converged = FALSE
-          if (verbose){
-            cat("Merged two states into one after convergence with", nstates_temp ," states. \n")
+          converged.tmp <- FALSE
+          if (control$trace > 0){
+            cat("Merged two states into one after convergence with",
+                num.states.tmp ," states. \n")
           }
         }
+    }
+    
+    # keep only those states that have an effective sample size of at least 1
+    effective.sample.sizes <- colSums(weight.matrices$train$tmp)
+    too.small.states <- effective.sample.sizes < 1
+    if (any(too.small.states)) {
+      size.zero.states <- which(too.small.states)
+      non.zero.size.state <- which(!too.small.states)
+      weight.matrices$train$tmp <- 
+        merge_states(c(non.zero.size.state[1], size.zero.states),
+                     weight.matrices$train$tmp)
+      merged <- TRUE
+      converged.tmp <- FALSE
       
+      if (control$trace > 0){
+        cat("Merged states into one since they had 0 sample size. \n")
+      }      
+      if (is.null(dim(weight.matrices$train$tmp))) {
+        stop.iterations <- TRUE
+      }
+      if (stop.iterations){
+        num.iter["final"] <- ii
+        overall.converged <- TRUE
+        if (control$trace > 0) {
+          cat("***************************************************** \n")
+          cat("EM algorithm converged to (local) optimum at iteration",
+              num.iter["final"],".\n")
+          cat("***************************************************** \n \n")
+        }
+        break
+      }
     }
     
-    PLC_pdfs_train = estimate_LC_pdfs(LCs = PLC_train, 
-                                      weight_matrix = weights_train_temp,
-                                      state_vector = NULL, #state_vector_train,
-                                      method=method[["PLC"]])
+    pdfs$PLC$train <- estimate_LC_pdfs(LCs = train.data$PLC, 
+                                       weight.matrix =
+                                         weight.matrices$train$tmp,
+                                       method = control$estimation.method[["PLC"]])
     
-    FLC_pdfs_train = estimate_LC_pdfs(LCs = FLC_train, 
-                                      weight_matrix = weights_train_temp,
-                                      state_vector = NULL, #state_vector_train,
-                                      method=method[["FLC"]])    
+    pdfs$FLC$train <- estimate_LC_pdfs(LCs = train.data$FLC, 
+                                       weight.matrix =
+                                         weight.matrices$train$tmp,
+                                       method = control$estimation.method[["FLC"]])    
+
+    loglik[ii, "train.weighted.update"] <-
+      compute_LICORS_loglik(pdfs$FLC$train, weight.matrices$train$tmp, 
+                            lambda = control$lambda)
+    num.states.tmp <- ncol(weight.matrices$train$tmp)
+    
+    # evaluate in-sample MSE
+    prediction$FLC$train <-
+      predict_FLC_given_PLC(train = list(data = list(FLC = train.data$FLC),
+                                         weight.matrix = weight.matrices$train$tmp),
+                            test = list(weight.matrix = weight.matrices$train$tmp),
+                            type = "mean")
+
+    prediction$FLC$train.weighted <-
+      predict_FLC_given_PLC(train = list(data = train.data,
+                                         weight.matrix = weight.matrices$train$tmp),
+                            test = list(weight.matrix = weight.matrices$train$tmp),
+                            type = "weighted.mean")
+
+    MSE[ii, "train.weighted"] <- control$loss(train.data$FLC, prediction$FLC$train.weighted)
+    MSE[ii, "train"] <- control$loss(train.data$FLC, prediction$FLC$train)
     
 
-    loglik_train_weighted_only_update[ii] = compute_LICORS_loglik(FLC_pdfs_train, 
-                                                                  weights_train_temp, 
-                                                                  lambda = lambda)
-
-    nstates_temp = ncol(weights_train_temp)
-    
-    
-    # evaluate in-sample MSE    
-    predictions_train = predict_FLC_given_PLC(state_vector = NULL, 
-                                              FLC_train = FLC_train, 
-                                              FLCs_train_pdf = NULL,
-                                              type = "mean", 
-                                              weight_matrix_train = weights_train_temp)
-    
-    predictions_train_weighted = predict_FLC_given_PLC(state_vector = NULL, 
-                                                       FLC_train = FLC_train,
-                                                       FLCs_train_pdf = NULL,
-                                                       type = "weightedmean", 
-                                                       weight_matrix_train = weights_train_temp)
-  
-    
-    MSE_train_weighted[ii] = loss(FLC_train, predictions_train_weighted)
-    MSE_train[ii] =  loss(FLC_train, predictions_train)
-    
     # evaluate out-of-sample MSE
-    PLC_pdfs_test = estimate_LC_pdfs(LCs = PLC_train, 
-                                     weight_matrix = weights_train_temp,
-                                     state_vector = NULL,
-                                     method=method[["PLC"]],
-                                     eval_LCs = PLC_test)
-    
-    weights_test = estimate_state_probs(weight_matrix = weights_train_temp,
-                                        state_vector = NULL, 
-                                        PLC_pdfs = PLC_pdfs_test, 
-                                        FLC_pdfs = NULL,
-                                        nstates_total = ncol(PLC_pdfs_test))
-    
-    state_vector_test <- weight_matrix2states(weights_test)
-    
-    predictions_test_weighted = predict_FLC_given_PLC(state_vector = NULL, 
-                                                      FLC_train = FLC_train,
-                                                      FLCs_train_pdf = NULL,
-                                                      type = "weightedmean", 
-                                                      weight_matrix_train = weights_train_temp,
-                                                      weight_matrix_test = weights_test)
-    
-    
-    predictions_test = predict_FLC_given_PLC(state_vector = NULL, 
-                                             FLC_train = FLC_train,
-                                             FLCs_train_pdf = NULL,
-                                             type = "mean", 
-                                             weight_matrix_train = weights_train_temp,
-                                             weight_matrix_test = weights_test)
+    pdfs$PLC$test <- estimate_LC_pdfs(LCs = train.data$PLC, 
+                                      weight.matrix = weight.matrices$train$tmp,
+                                      method = control$estimation.method[["PLC"]],
+                                      eval.LCs = test.data$PLC)
+    weight.matrices$test$tmp <-
+        estimate_state_probs(weight.matrix = weight.matrices$train$tmp,
+                             pdfs = list(PLC = pdfs$PLC$test, FLC = NULL),
+                             num.states = ncol(pdfs$PLC))
+    state.vector$test <- weight_matrix2states(weight.matrices$test$tmp)
 
-    MSE_test_weighted[ii] =  loss(FLC_test, predictions_test_weighted)
-    MSE_test[ii] = loss(FLC_test, predictions_test)
+    prediction$FLC$test.weighted <-
+      predict_FLC_given_PLC(train = list(data = train.data,
+                                         weight.matrix = weight.matrices$train$tmp),
+                            test = list(weight.matrix = weight.matrices$test$tmp),
+                            type = "weighted.mean")
+  
+    prediction$FLC$test <-
+      predict_FLC_given_PLC(train = list(data = train.data,
+                                         weight.matrix = weight.matrices$train$tmp),
+                            test = list(weight.matrix = weight.matrices$test$tmp),
+                            type = "mean")
 
-    FLC_pdfs_test = estimate_LC_pdfs(LCs = FLC_train, 
-                                     weight_matrix = weights_train_temp,
-                                     state_vector = NULL,
-                                     method=method[["FLC"]],
-                                     eval_LCs = FLC_test)
+    MSE[ii, "test.weighted"] <- control$loss(test.data$FLC, prediction$FLC$test.weighted)
+    MSE[ii, "test"] <- control$loss(test.data$FLC, prediction$FLC$test)
+    pdfs$FLC$test <- estimate_LC_pdfs(LCs = train.data$FLC, 
+                                      weight.matrix =
+                                        weight.matrices$train$tmp,
+                                      method = control$estimation.method[["FLC"]],
+                                      eval.LCs = test.data$FLC)
     
-    loglik_test_weighted[1] = compute_LICORS_loglik(FLC_pdfs_test, weights_test, lambda = lambda)
-    loglik_test[1] = compute_LICORS_loglik(FLC_pdfs_test, 
-                                           states2weight_matrix(state_vector_test, 
-                                                                nstates_total = ncol(FLC_pdfs_test)), 
-                                           lambda = lambda)
-    
-    if (MSE_test_weighted[ii] < min(MSE_test_weighted[-ii], na.rm=TRUE)){
-      weights_best = weights_train_temp
-      prediction_best = predictions_test
-      prediction_best_weighted = predictions_test_weighted
-      weights_best_test = weights_test
-      iter_best = ii
+    num.states["current"] <- ncol(pdfs$FLC$test)
+    loglik[ii, "test.weighted"] <-
+      compute_LICORS_loglik(pdfs$FLC$test, weight.matrices$test$tmp, 
+                            lambda = control$lambda)
+    loglik[ii, "test"] <-
+      compute_LICORS_loglik(pdfs$FLC$test, 
+                            states2weight_matrix(state.vector$test, 
+                                                 num.states.total = num.states["current"]), 
+                            lambda = control$lambda)
+    if (MSE[ii, "test.weighted"] <= min(MSE[-ii, "test.weighted"], na.rm = TRUE)) {
+      weight.matrices$train$opt <- weight.matrices$train$tmp
+      weight.matrices$test$opt <- weight.matrices$test$tmp
+      prediction$FLC$opt <- prediction$FLC$test
+      prediction$FLC$opt.weighted <- prediction$FLC$test.weighted
+      num.iter["opt"] <- ii
     }
 
-    if (verbose){
-      #cat(table(state_vector_train))
-      cat("\n Finished step", ii, "with", nstates_temp, "states. \n")
-      cat("Loglik:", loglik_train_weighted[ii], "\n")
-      cat("Out-of-sample loglik:", loglik_test_weighted[ii], "\n" )
-      cat("Penalty:", round(penalty[ii,]*100,1), "% \n")
+    if (control$trace > 0) {
+      cat("\n Finished step", ii, "with", num.states.tmp, "states. \n")
+      cat("Loglik:", loglik[ii, "train.weighted"], "\n")
+      cat("Out-of-sample loglik:", loglik[ii, "test.weighted"], "\n" )
+      cat("Penalty:", round(penalty[ii, ]*100,1), "% \n")
       if (!merged){
-        cat("Maximum difference in weights:", round(max_weight_diff, 4), "\n")
+        cat("Maximum difference in weights:", round(max.weight.diff, 4), "\n")
       } else {
   	    cat("Weights have been merged \n")
       }
-      cat("In-sample MSE:", MSE_train[ii], "\n" )
-      cat("Weighted In-sample MSE:", MSE_train_weighted[ii], "\n" )
-      cat("Out-of-sample MSE:", MSE_test[ii], "\n" )
-      cat("Weighted Out-of-sample MSE:", MSE_test_weighted[ii], "\n \n" )
-      cat("In sample 'R^2':", round( 100* (1- MSE_train_weighted[ii] / var(FLC_train)),1), "%\n \n")
+      cat("In-sample MSE:", MSE[ii, "train"], "\n" )
+      cat("Weighted In-sample MSE:", MSE[ii, "train.weighted"], "\n" )
+      cat("Out-of-sample MSE:", MSE[ii, "test"], "\n" )
+      cat("Weighted Out-of-sample MSE:", MSE[ii, "test.weighted"], "\n \n" )
+      cat("In-sample data vs fit correlation:",
+          round( 100 * cor(train.data$FLC, prediction$FLC$train.weighted), 1),
+          "%\n")
+      cat("Out-of-sample data vs fit correlation:",
+          round( 100 * cor(test.data$FLC, prediction$FLC$test.weighted), 1),
+          "%\n \n")
     }
     
-    weights_final = weights_train_temp
+    weight.matrices$train$final <- weight.matrices$train$tmp
    
-    if (ncol(weights_train_temp) < 3) {
-      stop.iterations = TRUE
+    if (ncol(weight.matrices$train$tmp) < 3) {
+      stop.iterations <- TRUE
     }
 
     if (stop.iterations){
-      overall_converged = TRUE
-      if (verbose) {
+      num.iter["final"] <- ii
+      overall.converged <- TRUE
+      if (control$trace > 0) {
         cat("***************************************************** \n")
-        cat("EM algorithm converged to (local) optimum at iteration", iter_final,".\n")
+        cat("EM algorithm converged to (local) optimum at iteration",
+            num.iter["final"],".\n")
         cat("***************************************************** \n \n")
       }
       break
@@ -545,140 +575,66 @@ function(LCs = list(PLC = PLCs, FLC = FLCs, dim = list(original = NULL, truncate
   }
   
   if (!stop.iterations) {
-    if (verbose) {
+    if (control$trace > 0) {
   	  cat("***************************************************** \n")
   	  cat("Finished all iterations without convergence. \n")
   	  cat("***************************************************** \n")
     }
   }
+  
+  weight.matrices$test$final <- weight.matrices$test$tmp
+  prediction$states$test$final <-
+    weight_matrix2states(weight.matrices$test$final)
+  prediction$states$test$opt <-
+    weight_matrix2states(weight.matrices$test$opt)
 
-  weights_test_final = weights_test
-  pred_state_test_final = weight_matrix2states(weights_test_final)
+  num.states[c("opt", "final")] <- c(ncol(weight.matrices$test$opt),
+                                     ncol(weight.matrices$test$final))
+  num.iter["final"] <- ii
   
-  weights_test_best = weights_best_test
-  pred_state_test_best = weight_matrix2states(weights_test_best)
-  
-  FLC_pdfs_best = estimate_LC_pdfs(LCs = FLC_train, 
-                                   weight_matrix = weights_best,
-                                   state_vector = NULL, #state_vector_train,
-                                   method=method[["FLC"]])
-  
-  iter_final = ii
-  
-  out = list()
-  out$LCs = LCs
-  out$sel_train = sel_train
-  
-  out$loglik_trace_train = loglik_train[1:iter_final]
-  out$loglik_trace_test = loglik_test[1:iter_final]
-  
-  out$loglik_trace_train_weighted = loglik_train_weighted[1:iter_final]
-  out$loglik_trace_test_weighted = loglik_test_weighted[1:iter_final]
-  
-  out$loglik_trace_train_weighted_only_update = loglik_train_weighted_only_update[1:iter_final]
-  
-  out$loglik_train = loglik_train[c(1, iter_best, iter_final)]
-  
-  out$loglik_test = loglik_test[c(1, iter_best, iter_final)]
-  
-  out$loglik_train_weighted = loglik_train_weighted[c(1, iter_best, iter_final)]
-  
-  out$loglik_test_weighted = loglik_test_weighted[c(1, iter_best, iter_final)]
-  
-  names(out$loglik_train) = names(out$loglik_test) = c("start", "best", "final")
-  names(out$loglik_train_weighted) = names(out$loglik_test_weighted) = names(out$loglik_test)
-  
-  out$MSE_trace = cbind(MSE_train, MSE_train_weighted, MSE_test, MSE_test_weighted)
-  colnames(out$MSE_trace) = c("train", "train weighted", "test", "test weighted")
-  
-  
-  out$loglik_trace = cbind(out$loglik_trace_train, out$loglik_trace_train_weighted, 
-                           out$loglik_trace_test, out$loglik_trace_test_weighted)
-  colnames(out$loglik_trace) = c("train", "train weighted", "test", "test weighted")
-  
-  out$theta_train = weight_matrix2states(weights_best)
-  
-  out$theta = rep(NA, nrow(FLCs))
-  out$theta[sel_train] = out$theta_train
-  out$theta[-sel_train] = pred_state_test_best
-  
+  out <- list(LCs = LCs,
+              train.index = train.index,
+              loglik.trace = loglik[seq_len(num.iter["final"]), ],
+              loglik = loglik[c(1, num.iter["opt"], num.iter["final"]), ])
+  rownames(out$loglik) <- c("init", "opt", "final")
 
+  out <- c(out,
+           list(MSE.trace = MSE[seq_len(num.iter["final"]), ],
+                MSE = MSE[num.iter["opt"], ]))
+  out$weight.matrices <- weight.matrices
+  
+  out$states <- rep(NA, NN)
+  out$states[train.index] <- weight_matrix2states(weight.matrices$train$opt)
+  out$states[-train.index] <- prediction$states$test$opt
 
-  out$theta_mean_train = predict_FLC_given_PLC(state_vector = NULL, 
-                                               FLC_train = FLC_train, 
-                                               FLCs_train_pdf = NULL,
-                                               type = "mean", 
-                                               weight_matrix_train = weights_best)
-  out$theta_weighted_mean_train = predict_FLC_given_PLC(state_vector = NULL, 
-                                                        FLC_train = FLC_train, 
-                                                        FLCs_train_pdf = NULL,
-                                                        type = "weightedmean", 
-                                                        weight_matrix_train = weights_best)  
-  out$theta_median_train = predict_FLC_given_PLC(state_vector = NULL, 
-                                                        FLC_train = FLC_train, 
-                                                        FLCs_train_pdf = NULL,
-                                                        type = "median", 
-                                                        weight_matrix_train = weights_best)
-  
-  out$theta_final = rep(NA, nrow(FLCs))
-  out$theta_final[-sel_train] = pred_state_test_final
-  out$theta_final[sel_train] = weight_matrix2states(weights_final)
-  
-  out$MSE = c(loss(FLC_train, out$theta_mean_train), min(MSE_test, na.rm = TRUE))
-  names(out$MSE) = c("in-sample", "out-of-sample")
-  out$MSE_weighted = c(loss(FLC_train, out$theta_weighted_mean_train), min(MSE_test_weighted, na.rm = TRUE))
-  names(out$MSE_weighted) = c("in-sample", "out-of-sample")
-  
-  out$theta_mean = rep(NA, nrow(FLCs))
-  out$theta_mean[-sel_train] = prediction_best
-  out$theta_mean[sel_train] = out$theta_mean_train  
-  
-  out$theta_weighted_mean = rep(NA, nrow(FLCs))
-  out$theta_weighted_mean[-sel_train] = prediction_best_weighted
-  out$theta_weighted_mean[sel_train] = out$theta_weighted_mean_train
-  
-  
-  out$theta_median = rep(NA, nrow(FLCs))
-  out$theta_median[-sel_train] = prediction_best
-  out$theta_median[sel_train] = out$theta_median_train
-  
-  out$conditional_state_probs_final = matrix(NA, ncol = ncol(weights_final), 
-                                          nrow = nrow(FLCs))
-  out$conditional_state_probs_final[sel_train, ] = weights_final
-  out$conditional_state_probs_final[-sel_train, ] = weights_test_final
-  
-  out$conditional_state_probs = matrix(NA, ncol = ncol(weights_best), nrow = nrow(FLCs))
-  out$conditional_state_probs[-sel_train, ] = weights_best_test
-  out$conditional_state_probs[sel_train, ] = weights_best
-  
-  out$marginal_state_probs = estimate_state_probs(weights_best)
-  out$marginal_state_probs_final = estimate_state_probs(weights_final)
-  out$marginal_state_probs_test = estimate_state_probs(weights_best_test)
+  out$conditional.state.probs <- list(opt = NULL, final = NULL)
+   out$conditional.state.probs$final <- 
+    Matrix(0, ncol = num.states["final"], nrow = num.samples["all"],
+           sparse = TRUE)
+  # copy format to optimal matrix
+  out$conditional.state.probs$opt <- 
+    Matrix(0, ncol = num.states["opt"], nrow = num.samples["all"],
+           sparse = TRUE)
 
-  out$NEC = NEC
-  out$NEC_weighted = NEC_weighted
-  out$loglik_one_cluster = loglik_one_cluster
+  out$conditional.state.probs$final[train.index, ] <- weight.matrices$train$final
+  out$conditional.state.probs$final[-train.index, ] <- weight.matrices$test$final
+  out$conditional.state.probs$opt[-train.index, ] <- weight.matrices$test$opt
+  out$conditional.state.probs$opt[train.index, ] <- weight.matrices$train$opt
 
-  out$nstates = c(nstates_start, length(out$marginal_state_probs), length(out$marginal_state_probs_final))
-  names(out$nstates) = c("start", "best", "final")
+  out$marginal.state.probs <- lapply(out$conditinal.state.probs,
+                                     estimate_state_probs)
+  out$penalty <- penalty
+  out$loglik.one.state <- loglik.one.state
+
+  out$num.states <- num.states["current" != names(num.states)]
+  out$num.iter <- num.iter
+
+  out$control <- control
+  out$merging.iter <- merging.iter
+  out$num.merges <- length(out$merging.iter)
   
-  out$niter = c(max_iter, iter_best, iter_final)
-  names(out$niter) = c("max", "best", "final")
-  
-  out$penalty = penalty
-  
-  out$alpha = alpha
-  out$merging_times = merging_times
-  out$nmerges = length(out$merging_times)
-  out$CV_split_random = CV_split_random
-  
-  out$method = method
-  out$sparsity = sparsity
-  out$lambda = lambda
-  out$seed = seed
-  out$converged = overall_converged
-  out$dim = LCs$dim
-  class(out) = c("LICORS", "mixed_LICORS")
-  
+  out$converged <- overall.converged
+  out$dim <- LCs$dim
+  class(out) <- c("LICORS", "mixed_LICORS")
   invisible(out)
 }

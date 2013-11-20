@@ -2,25 +2,22 @@
 \alias{estimate_state_probs}
 \title{Estimate conditional/marginal state probabilities}
 \usage{
-estimate_state_probs(weight_matrix = NULL, state_vector = NULL, PLC_pdfs = NULL, 
-    FLC_pdfs = NULL, nstates_total = NULL)
+estimate_state_probs(weight.matrix = NULL, states = NULL, pdfs = list(FLC = NULL, 
+    PLC = NULL), num.states = NULL)
 }
 \arguments{
-  \item{weight_matrix}{\eqn{N \times K} weight matrix}
+  \item{weight.matrix}{\eqn{N \times K} weight matrix}
 
-  \item{state_vector}{vector of length \eqn{N} with entry
-  \eqn{i} being the label \eqn{k = 1, \ldots, K} of PLC
-  \eqn{i}}
+  \item{states}{vector of length \eqn{N} with entry \eqn{i}
+  being the label \eqn{k = 1, \ldots, K} of PLC \eqn{i}}
 
-  \item{PLC_pdfs}{estimated PLC pdf evaluated at each PLC,
+  \item{pdfs}{a list with estimated pdfs for PLC and/or FLC
+  evaluated at each PLC, \eqn{i=1, \ldots, N} and/or FLC,
   \eqn{i=1, \ldots, N}}
 
-  \item{FLC_pdfs}{estimated FLC pdf evaluated at each FLC,
-  \eqn{i=1, \ldots, N}}
-
-  \item{nstates_total}{number of states in total. If
+  \item{num.states}{number of states in total. If
   \code{NULL} (default) then it sets it to
-  \code{max(state_vector)} or \code{ncol(weight_matrix)} -
+  \code{max(states)} or \code{ncol(weight.matrix)} -
   depending on which one is provided.}
 }
 \value{
@@ -34,8 +31,8 @@ estimate_state_probs(weight_matrix = NULL, state_vector = NULL, PLC_pdfs = NULL,
   These probabilites can be marginal (\eqn{P(S = s_k;
   \mathbf{W})}) or conditional (\eqn{P(S = s_k \mid
   \ell^{-}, \ell^{+}; \mathbf{W})}), depending on the
-  provided information (\code{PLC_pdfs} and
-  \code{FLC_pdfs}). \itemize{ \item If both are \code{NULL}
+  provided information (\code{pdfs$PLC} and
+  \code{pdfs$FLC}). \itemize{ \item If both are \code{NULL}
   then \code{estimate_state_probs} returns a vector of
   length \eqn{K} with marginal probabilities.  \item If
   either of them is not \code{NULL} then it returns an
@@ -44,7 +41,7 @@ estimate_state_probs(weight_matrix = NULL, state_vector = NULL, PLC_pdfs = NULL,
   \eqn{s_k}, \eqn{k = 1, \ldots, K}. }
 }
 \examples{
-WW <- matrix(runif(10000), ncol = 20)
+WW <- matrix(runif(10000), ncol = 10)
 WW <- normalize(WW)
 estimate_state_probs(WW)
 }

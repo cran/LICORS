@@ -5,8 +5,8 @@
 #' \eqn{K} classes, or using initial \emph{kmeans++} (\code{\link{kmeanspp}}) 
 #' clustering (in several variations on PLCs and/or FLCs).
 #' 
-#' @param nstates number of states 
-#' @param nsamples number of samples.
+#' @param num.states number of states 
+#' @param num.samples number of samples.
 #' @param method how to choose the labels: either uniformly at random from 
 #' \eqn{\lbrace 1, \ldots, K \rbrace} or using K-means on PLCs and FLCs or 
 #' a combination.  Default: \code{method = "random"}.  Other options are
@@ -19,70 +19,72 @@
 #' x1 = rnorm(1000)
 #' x2 = rnorm(200, mean = 2)
 #' yy = c(x1, x2)
-#' ss = initialize_states(nstates = 2, nsamples = length(yy), method = "KmeansFLC", 
+#' ss = initialize_states(num.states = 2, num.samples = length(yy), method = "KmeansFLC", 
 #'                        LCs = list(FLCs = yy))
 #' plot(yy, col = ss, pch = 19)
 #' points(x1, col = "blue")
 #' 
 
-initialize_states <- function(nstates = NULL, nsamples = NULL, 
-                              method = "random", 
+initialize_states <- function(num.states = NULL, num.samples = NULL, 
+                              method = c("random", "KmeansPLC", "KmeansFLC", 
+                                         "KmeansPLCFLC", "KmeansFLCPLC"),
                               LCs = list(PLC = NULL, FLC = NULL)) {
-  if (is.null(nstates)) {
+  if (is.null(num.states)) {
     stop("You must provide the number of clusters.")
   }
   
-  if (is.null(unlist(LCs)) & is.null(nsamples)){
-    stop("You must either provide the total number of samples or data 'LCs'.")
-  } 
-  
-  if (is.null(nsamples)) {
-    stop("You must provide the total number of samples.")
-  } 
-  
-  state_vector <- rep(NA, nsamples)
+  if (is.null(num.samples)) {
+    if (is.null(unlist(LCs))) {
+      stop("You must either provide the total number of samples or data 'LCs'.")
+    } else {
+      num.samples <- nrow(LCs$PLC)
+    }
+  }  
+  method <- match.arg(method)
+
   if (method == "random") {
-    state_vector <- sample.int(n = nstates, size = nsamples, replace = TRUE)
-    # make sure that each state appears at least once
-    state_vector[sample.int(nsamples, nstates, replace = FALSE)] <- 1:nstates
+    states <- sample.int(n = num.states, size = num.samples, replace = TRUE)
+    # make sure that every state at least appears once
+    states[sample.int(num.samples, num.states, replace = FALSE)] <- 
+      seq_len(num.states)
   } else if (method == "KmeansPLC") {
-    state_vector <- kmeanspp(LCs$PLC, nstates, iter.max = 100, nstart = 10)$cluster
+    states <- kmeanspp(LCs$PLC, num.states, iter.max = 100, nstart = 10)$cluster
   } else if (method == "KmeansFLC") {
-    state_vector <- kmeanspp(LCs$FLC, nstates, iter.max = 100, nstart = 10)$cluster
+    states <- kmeanspp(LCs$FLC, num.states, iter.max = 100, nstart = 10)$cluster
   } else if (any(method == c("KmeansPLCFLC", "KmeansFLCPLC"))) {
     # do two stage clustering 1) on the PLC (FLC) space, and then conditional
     # on the first stage cluster 2) do a clustering in each cluster but using
     # the FLCs (PLCs)
-    first_stage_nstates <- ceiling(nstates^(1/3))
-    second_stage_nstates <- floor(nstates/first_stage_nstates)
-    second_stage_last_run_nstates <- nstates - first_stage_nstates * second_stage_nstates + second_stage_nstates
-    
+    first.stage.num.states <- ceiling(num.states^(1/3))
+    second.stage.num.states <- floor(num.states/first.stage.num.states)
+    second.stage.last.run.num.states <- 
+      num.states - first.stage.num.states * second.stage.num.states + second.stage.num.states
     
     if (method == "KmeansFLCPLC") {
-      first_stage_data <- rbind(LCs$FLC)
-      second_stage_data <- rbind(LCs$PLC)
+      first.stage.data <- rbind(LCs$FLC)
+      second.stage.data <- rbind(LCs$PLC)
     } else {
-      first_stage_data <- rbind(LCs$PLC)
-      second_stage_data <- rbind(LCs$FLC)
+      first.stage.data <- rbind(LCs$PLC)
+      second.stage.data <- rbind(LCs$FLC)
     }
         
-    first_stage_labels <- kmeanspp(first_stage_data, first_stage_nstates, 
+    first.stage.labels <- kmeanspp(first.stage.data, first.stage.num.states, 
                                    iter.max = 100, nstart = 10)$cluster
 
-    second_stage_labels <- rep(NA, nsamples)
-    for (ll in 1:(first_stage_nstates-1)) {
-      second_stage_labels[first_stage_labels == ll] <- (ll - 1) * first_stage_nstates + 
-        kmeanspp(second_stage_data[first_stage_labels == ll,], 
-                 second_stage_nstates, 
+    second.stage.labels <- rep(NA, num.samples)
+    for (ll in seq_len(first.stage.num.states - 1)) {
+      second.stage.labels[first.stage.labels == ll] <- (ll - 1) * first.stage.num.states + 
+        kmeanspp(second.stage.data[first.stage.labels == ll,], 
+                 second.stage.num.states, 
                  iter.max = 100, nstart = 10)$cluster
     }
-    second_stage_labels[first_stage_labels == first_stage_nstates] = (first_stage_nstates - 1) * first_stage_nstates + 
-      kmeanspp(second_stage_data[first_stage_labels == first_stage_nstates,], 
-               second_stage_last_run_nstates, 
+    second.stage.labels[first.stage.labels == first.stage.num.states] = (first.stage.num.states - 1) * first.stage.num.states + 
+      kmeanspp(second.stage.data[first.stage.labels == first.stage.num.states,], 
+               second.stage.last.run.num.states, 
                iter.max = 100, nstart = 10)$cluster
     
-    state_vector <- second_stage_labels
+    states <- second.stage.labels
   }
-  invisible(state_vector)
+  invisible(states)
 }
 

@@ -31,43 +31,53 @@
 #' plot(ZZ, col = cluster_ZZ$cluster+1, pch = 19)
 #' 
 
-kmeanspp <- function(data, k = 1, start = "random", iter.max = 100, 
+kmeanspp <- function(data, k = 2, 
+                     start = "random", iter.max = 100, 
                      nstart = 10, ...) {
    
   kk <- k
   
-  data <- cbind(data)
+  if (length(dim(data)) == 0) {
+    data <- matrix(data, ncol = 1)
+  } else {
+    data <- cbind(data)
+  }
   
-  nsamples <- nrow(data)
+  num.samples <- nrow(data)
   ndim <- ncol(data)
+  
+  data.avg <- colMeans(data)
+  data.cov <- cov(data)
   
   out <- list()
   out$tot.withinss <- Inf
-  for (starts in 1:nstart) {  
+  for (restart in seq_len(nstart)) {  
     center_ids <- rep(0, length = kk)
     if (start == "random"){
-      center_ids[1:2] = sample.int(nsamples, 1)
+      center_ids[1:2] = sample.int(num.samples, 1)
     } else if (start == "normal") { 
-      center_ids[1:2] = which.min(dmvnorm(data, mean = colMeans(data), sigma = cov(data)))
+      center_ids[1:2] = which.min(dmvnorm(data, mean = data.avg, 
+                                          sigma = data.cov))
     } else {
       center_ids[1:2] = start
     }
-    
-    for (ii in 2:kk){
+    for (ii in 2:kk) { # the plus-plus step in kmeans
       if (ndim == 1){
-        dists <- apply(cbind(data[center_ids,]), 2, function(center) {rowSums((data - center)^2)})
+        dists <- apply(cbind(data[center_ids, ]), 1, 
+                       function(center) {rowSums((data - center)^2)})
       } else {
-        dists <- apply(data[center_ids,], 1, function(center) {rowSums((data - center)^2)})
+        dists <- apply(data[center_ids, ], 1, 
+                       function(center) {rowSums((data - center)^2)})
       }
       probs <- apply(dists, 1, min)
       probs[center_ids] <- 0
-      center_ids[ii] <- sample.int(nsamples, 1, prob = probs)
+      center_ids[ii] <- sample.int(num.samples, 1, prob = probs)
     }
     
-    out_temp <- kmeans(data, centers = data[center_ids,], iter.max = iter.max, ...)
-    out_temp$inicial.centers <- data[center_ids,]
-    if (out_temp$tot.withinss < out$tot.withinss){
-      out <- out_temp
+    tmp.out <- kmeans(data, centers = data[center_ids, ], iter.max = iter.max, ...)
+    tmp.out$inicial.centers <- data[center_ids, ]
+    if (tmp.out$tot.withinss < out$tot.withinss){
+      out <- tmp.out
     }
   } 
   invisible(out)

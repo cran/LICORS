@@ -2,7 +2,7 @@
 \alias{setup_LC_geometry}
 \title{Setup light cone geometry}
 \usage{
-setup_LC_geometry(horizon = list(PLC = 1, FLC = 0), speed = 1, space_dim = 1, 
+setup_LC_geometry(horizon = list(PLC = 1, FLC = 0), speed = 1, space.dim = 1, 
     shape = "cone")
 }
 \arguments{
@@ -11,7 +11,7 @@ setup_LC_geometry(horizon = list(PLC = 1, FLC = 0), speed = 1, space_dim = 1,
 
   \item{speed}{speed of propagation}
 
-  \item{space_dim}{dimension of the spatial grid. Eg.
+  \item{space.dim}{dimension of the spatial grid. Eg.
   \code{2} if the data is a video ( = image sequences).}
 
   \item{shape}{shape of light cone: \code{'cone'},
@@ -25,13 +25,14 @@ setup_LC_geometry(horizon = list(PLC = 1, FLC = 0), speed = 1, space_dim = 1,
   for LICORS.
 }
 \examples{
-aa <- setup_LC_geometry(horizon = list(PLC = 2, FLC = 0), speed = 1, space_dim = 1, 
+aa <- setup_LC_geometry(horizon = list(PLC = 3, FLC = 1), speed = 1, space.dim = 1, 
     shape = "cone")
 aa
 plot(aa)
 summary(aa)
 }
 \seealso{
-  \code{\link{LC-utils}}, \code{\link{compute_LC_coords}}
+  \code{\link{LC-utils}},
+  \code{\link{compute_LC_coordinates}}
 }
 \keyword{manip}

@@ -31,37 +31,45 @@ normalize <- function(x, byrow = TRUE, tol = 1e-6) {
   
   object <- x
   
-  if (byrow == FALSE){
-    return( t(normalize( t(object), tol = tol, byrow = TRUE) ) )
+  if (!byrow){
+    object.new <- t(normalize( t(object), tol = tol, byrow = TRUE) ) 
   } else {
-    if (is.matrix(object)){
-      matrix.new <- threshold(object, min = 0)
+    if (is.matrix(object) || any(is(object) == "Matrix")) {
+      object.new <- threshold(object, min = 0)
       max.pos <- integer(0)
-      if (any(object < 0)){
-        all.zeros <- which(apply(matrix.new, 1, function(u) all(u == 0)))
+      all.zeros <- which(apply(object.new, 1, function(u) all(u == 0)))
+      if (any(all.zeros)) {
         if (length(all.zeros) > 1){
           max.pos <- apply(object[all.zeros,], 1, which.max)
         } else if (length(all.zeros) == 1) {
-          max.pos = which.max(object[all.zeros,])
+          max.pos <- which.max(object[all.zeros,])
         }
-        matrix.new[cbind(all.zeros, max.pos)] = 1
+        object.new[cbind(all.zeros, max.pos)] <- 1
       }
-      matrix.new <- sweep(matrix.new, 1, rowSums(matrix.new), "/")
-      if (tol > 0) {
-        matrix.new[matrix.new < tol] <- 0
-        matrix.new <- sweep(matrix.new, 1, rowSums(matrix.new), "/")
-      } 
-      invisible(matrix.new)
-    } else if (is.vector(object)){
-      max.pos = which.max(object)
-      max.val = object[max.pos]
-      object = threshold(object, min = 0)
-      if (all(object == 0)){
-        object[max.pos] = 1
+      if (any(is(object.new) == "Matrix")) {
+        # normalize rows for sparse matrices
+        object.new <- Diagonal(x = 1 / rowSums(object.new)) %*% object.new
       } else {
-        object = object/sum(object)
+        object.new <- sweep(object.new, 1, rowSums(object.new), "/")
       }
-      invisible(object)
+      if (tol > 0) {
+        object.new[object.new < tol] <- 0
+        if (any(is(object.new) == "Matrix")) {
+          # normalize rows for sparse matrices
+          object.new <- Diagonal(x = 1 / rowSums(object.new)) %*% object.new
+        } else {
+          object.new <- sweep(object.new, 1, rowSums(object.new), "/")
+        }
+      } 
+    } else if (is.vector(object)) {
+      max.pos <- which.max(object)
+      object.new <- threshold(object, min = 0)
+      if (all(object.new == 0)) {
+        object.new[max.pos] <- 1
+      } else {
+        object.new <- object.new / sum(object.new)
+      }
     }
   }
+  return(object.new)
 } 

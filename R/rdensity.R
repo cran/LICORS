@@ -32,7 +32,7 @@ rdensity <- function(n = 100, data = NULL, fhat = NULL,
                      kernel = "Gaussian") {
   nn <- n
   if (is.null(weights)) {
-    weights <- rep(1/length(data), length(data))
+    weights <- rep(1 / length(data), length(data))
   }
   if (is.null(bw)) {
     stop("You must provide a bandwidth 'bw'.")

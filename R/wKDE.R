@@ -9,8 +9,8 @@
 #' (using \code{\link[stats]{approx}}).
 #' 
 #' @param x data vector
-#' @param eval_points points where the density should be evaluated. 
-#' Default: \code{eval_points = x}.
+#' @param eval.points points where the density should be evaluated. 
+#' Default: \code{eval.points = x}.
 #' @param weights vector of weights. Same length as \code{x}. 
 #' Default: \code{weights=NULL} - equal weight for each sample.
 #' @param kernel type of kernel. Default: \code{kernel='Gaussian'}. 
@@ -21,7 +21,7 @@
 #' Default: \code{bw="nrd0"}. Again see \code{\link[stats]{density}} for 
 #' other options.
 #' @return
-#' A vector of length \code{length(eval_points)} (or \code{nrow(eval_points)}) 
+#' A vector of length \code{length(eval.points)} (or \code{nrow(eval.points)}) 
 #' with the probabilities of each point given the nonparametric fit on \code{x}.
 #' @keywords distribution smooth
 #' @export
@@ -33,26 +33,25 @@
 #' lines(yy, wKDE(xx, yy), col = 2)
 #' 
 
-wKDE <- function(x, eval_points = x, weights = NULL, 
-                          kernel = "gaussian", bw = "nrd0") {
+wKDE <- function(x, eval.points = x, weights = NULL, 
+                 kernel = "gaussian", bw = "nrd0") {
   x <- na.omit(x)
-  
   if (!is.character(bw)){
-    optimal_bw <- bw
+    optimal.bw <- bw
   } else {
     if (is.null(weights)) {
-      optimal_bw <- bw.nrd(x)
+      optimal.bw <- bw.nrd(x)
     } else {
       sel <- (weights > quantile(weights, 0.9))
       if (sum(sel) < 5) {
-        optimal_bw <- bw.nrd(x)
+        optimal.bw <- bw.nrd(x)
       } else {
-        optimal_bw <- bw.nrd(x[sel])
+        optimal.bw <- bw.nrd(x[sel])
       }
     }
   }
-  mm <- density(x, bw = optimal_bw, weights = weights, kernel = kernel)
-  invisible(approx(mm$x, mm$y, eval_points)$y)
+  dens.object <- density(x, bw = optimal.bw, weights = weights, kernel = kernel)
+  invisible(approx(dens.object$x, dens.object$y, eval.points)$y)
 } 
 
 #' @rdname wKDE
@@ -67,22 +66,19 @@ wKDE <- function(x, eval_points = x, weights = NULL,
 #' ### Multivariate example ###
 #' XX = matrix(rnorm(100), ncol = 2)
 #' YY = matrix(runif(40), ncol = 2)
-#' mm = mv_wKDE(XX)
+#' dens.object = mv_wKDE(XX)
 #' 
-#' plot(mm)
+#' plot(dens.object)
 #' points(mv_wKDE(XX, YY), col = 2, ylab = "")
 #
-mv_wKDE <- function(x, eval_points = x, weights = NULL, kernel = "gaussian") {   
+mv_wKDE <- function(x, eval.points = x, weights = NULL, kernel = "gaussian") {   
   if (is.null(weights)){
     weights <- 1
   }
-  
   if (kernel == "gaussian"){
     kernel <- "gauss"
   }
-  
-  invisible(predict(locfit.raw(x, weights = weights, kern = kernel), 
-                    eval_points))       
+  invisible(predict(locfit.raw(x, weights = weights, kern = kernel), eval.points))       
 }
 
 

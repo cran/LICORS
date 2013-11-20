@@ -2,10 +2,10 @@
 \alias{remove_small_sample_states}
 \title{Reassign low sample states to close states}
 \usage{
-remove_small_sample_states(weight_matrix = NULL, min = NULL)
+remove_small_sample_states(weight.matrix, min)
 }
 \arguments{
-  \item{weight_matrix}{\eqn{N \times K} weight matrix}
+  \item{weight.matrix}{\eqn{N \times K} weight matrix}
 
   \item{min}{minimum effective sample size to stay in the
   weight matrix}

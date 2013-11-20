@@ -2,28 +2,25 @@
 \alias{predict_FLC_given_PLC}
 \title{Predict FLCs given new PLCs}
 \usage{
-predict_FLC_given_PLC(state_vector = NULL, FLC_train, FLCs_train_pdf = NULL, 
-    type = "mean", weight_matrix_train = NULL, weight_matrix_test = weight_matrix_train)
+predict_FLC_given_PLC(train = list(data = list(FLC = NULL, PLC = NULL), 
+    weight.matrix = NULL, pdfs = list(FLC = NULL, PLC = NULL)), test = list(PLC = NULL, 
+    weight.matrix = NULL), type = c("weighted.mean", "mean", "median", "mode"), 
+    method = list(FLC = "nonparametric", PLC = "normal"))
 }
 \arguments{
-  \item{FLC_train}{the matrix of training FLCs. This matrix
-  has \eqn{N} rows, and \eqn{n_f} columns}
+  \item{train}{a list of training examples with LC
+  observations (a list of \code{PLC} and \code{FLC}),
+  \code{weight.matrix}, and \code{pdfs}}
 
-  \item{FLCs_train_pdf}{\eqn{N \times K} matrix with
-  density estimates of the training FLCs.}
+  \item{test}{a list of test examples with PLC observations
+  and/or the \code{weight.matrix} associated with the PLC
+  observations.}
 
-  \item{weight_matrix_train}{\eqn{N \times K} weight matrix
-  from the training data}
+  \item{method}{estimation method for estimating PLC and
+  FLC distributions}
 
-  \item{weight_matrix_test}{\eqn{\tilde{N} \times K} weight
-  matrix from the test data}
-
-  \item{state_vector}{vector of length \eqn{\tilde{N}} with
-  entry \eqn{i} being the label \eqn{k = 1, \ldots, K} of
-  PLC \eqn{i}}
-
-  \item{type}{type of prediction: \code{'mean'},
-  \code{'median'}, \code{'weightedmean'}.}
+  \item{type}{prediction: \code{'mean'}, \code{'median'},
+  \code{'weightedmean'}, or \code{'mode'}.}
 }
 \value{
   \eqn{N \times K} matrix

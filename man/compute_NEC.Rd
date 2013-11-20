@@ -2,15 +2,15 @@
 \alias{compute_NEC}
 \title{Compute Negative Entropy Criterion (NEC)}
 \usage{
-compute_NEC(weight_matrix, loglik_1 = NULL, loglik_k = NULL)
+compute_NEC(weight.matrix, loglik.1 = NULL, loglik.k = NULL)
 }
 \arguments{
-  \item{weight_matrix}{\eqn{N \times K} weight matrix}
+  \item{weight.matrix}{\eqn{N \times K} weight matrix}
 
-  \item{loglik_1}{baseline log-likelihood for \eqn{K=1}
+  \item{loglik.1}{baseline log-likelihood for \eqn{K=1}
   cluster model}
 
-  \item{loglik_k}{log-likelihood for \eqn{K} cluster model}
+  \item{loglik.k}{log-likelihood for \eqn{K} cluster model}
 }
 \description{
   Computes the negative entropy criterion (NEC) to assess

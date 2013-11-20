@@ -75,28 +75,29 @@ image2 <- function(x=NULL, y=NULL, z=NULL, col = NULL,
   yy <- y
   
   if (is.null(zz) & is.null(xx)){
-    stop("You must provide the matrix to be plotted. Either as 'z' or as 'x'.")
+    stop("You must provide the matrix to be plotted.
+          Either as 'z' or as 'x'.")
   }
   
   if (is.null(zz) & !is.null(xx)){
     zz <- xx
     xx <- NULL
   }
-  
+  zz <- as.matrix(zz)
   op <- par(no.readonly = TRUE)
   
-  zz[is.na(zz)] = min(zz, na.rm=TRUE)
+  zz[is.na(zz)] <- min(zz, na.rm = TRUE)
   min <- min(zz)
   max <- max(zz)
   yLabels <- rownames(zz)
   xLabels <- colnames(zz)
-  title <-c()
+  title <- c()
   if (!is.null(zlim)){
-   min = zlim[1]
-   max = zlim[2]
+   min <- zlim[1]
+   max <- zlim[2]
   }
   # check for additional function arguments
-  if( length(list(...)) ){
+  if(length(list(...)) ){
     Lst <- list(...)
     if( !is.null(Lst$zlim) ){
        min <- Lst$zlim[1]
@@ -124,10 +125,10 @@ image2 <- function(x=NULL, y=NULL, z=NULL, col = NULL,
   
   
   if (is.null(xx)){
-    xx <- 1:ncol(zz)
+    xx <- seq_len(ncol(zz))
   }
   if (is.null(yy)){
-    yy <- 1:nrow(zz)
+    yy <- seq_len(nrow(zz))
   }  
   
   if ( is.null(xLabels) ){
@@ -148,57 +149,58 @@ image2 <- function(x=NULL, y=NULL, z=NULL, col = NULL,
   color_levels <- seq(min, max, length=length(col))
 
   # Reverse Y axis
-  reverse <- nrow(zz) : 1
+  reverse <- nrow(zz):1
   yLabels <- yLabels[reverse]
-  zz <- zz[reverse,]
+  zz <- zz[reverse, ]
   
   # Data Map
   if (legend) {
     if (density) {
-      layout(matrix(data=c(1,2), nrow=2), heights=c(9,2))
+      layout(matrix(data = c(1, 2), nrow = 2), heights = c(9, 2))
     } else {
-      layout(matrix(data=c(1,2), ncol=2), widths=c(9,2))
+      layout(matrix(data = c(1, 2), ncol = 2), widths = c(9, 2))
     }
     ## par(mar = c(1,1,2,1), cex.lab = 2, cex.axis = 2, lwd = 2)  # change only inside new plot
   }
-  
-
   
   par_user = par()
   # par(mar = rep(0.5, 4), cex.lab = 2, cex.axis = 2, lwd = 2)
 
   #image(1:ncol(zz), 1:nrow(zz), t(zz), col=col, axes=FALSE, zlim=c(min,max), xlab = xlab, ylab = ylab, ...) 
-  image(x = xx, y = yy, z = t(zz), col=col, axes=FALSE, zlim=c(min,max), xlab = xlab, ylab = ylab, ...)
+  image(x = xx, y = yy, z = t(zz), col = col, axes = FALSE, 
+        zlim = c(min, max), xlab = xlab, ylab = ylab, ...)
   
   box()
   if( !is.null(title) ){
-   title(main=title)
+   title(main = title)
   }
   if (axes) {
-    axis(3, at=xLabels, labels=xLabels, cex.axis=2)
-    axis(2, at=yLabels, labels=rev(yLabels), las=1, cex.axis=2)
+    axis(3, at = xLabels, labels = xLabels, cex.axis = 2)
+    axis(2, at = yLabels, labels = rev(yLabels), las = 1, cex.axis = 2)
   }
-  
   
   if (legend) {
     # Color Scale
     if (density) {
       if (is.null(zlim)){
-        temp.pdf = density(zz)
+        temp.pdf <- density(zz)
       } else {
-        temp.pdf = density(zz, from = zlim[1], to = zlim[2])
+        temp.pdf <- density(zz, from = zlim[1], to = zlim[2])
       }
       if (is.null(max.height)) {
-        max.height = max(temp.pdf$y)*1.05
+        max.height <- max(temp.pdf$y)*1.05
       }
       par(mar = c(3, par_user$mar[2], 0.5, par_user$mar[4]))
       #par(cex.lab = 2, cex.axis = 2, lwd = 2, mar = c(3,2.5,0,3))
       make_legend(data=zz, col = col, side = 1, zlim = c(min, max), 
-                    col.ticks = pretty(temp.pdf$x, n = 6), cex.axis = 1.25, max.height = max.height )
+                  col.ticks = pretty(temp.pdf$x, n = 6), cex.axis = 1.25, 
+                  max.height = max.height)
 
       mtext(zlim.label, side = 1, line = 2, cex = 1.25)
       lines(temp.pdf, lwd = 2)
-      axis(4, at = c(0, max.height/2, max.height), labels = c("0", paste(round(c(0.5, 1)* max.height, 1))) , cex.axis = 1.25)
+      axis(4, at = c(0, max.height / 2, max.height), 
+           labels = c("0", paste(round(c(0.5, 1)* max.height, 1))), 
+           cex.axis = 1.25)
       mtext("density", side = 2, line = 0.5, cex = 1.25)
     } else {
       #print(par_user)

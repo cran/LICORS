@@ -2,18 +2,17 @@
 \alias{estimate_state_adj_matrix}
 \title{Estimate adjacency matrix for equivalent FLC distributions based on states}
 \usage{
-estimate_state_adj_matrix(state_vector = NULL, FLCs = NULL, FLC_pdfs = NULL, 
-    alpha = NULL, distance = function(f, g) return(mean(abs(f - g))))
+estimate_state_adj_matrix(states = NULL, FLCs = NULL, pdfs.FLC = NULL, alpha = NULL, 
+    distance = function(f, g) return(mean(abs(f - g))))
 }
 \arguments{
-  \item{state_vector}{vector of length \eqn{N} with entry
-  \eqn{i} being the label \eqn{k = 1, \ldots, K} of PLC
-  \eqn{i}}
+  \item{states}{vector of length \eqn{N} with entry \eqn{i}
+  being the label \eqn{k = 1, \ldots, K} of PLC \eqn{i}}
 
   \item{FLCs}{\eqn{N \times n_f} matrix of FLCs (only
   necessary if \code{distance= "KS"})}
 
-  \item{FLC_pdfs}{\eqn{N \times K} matrix of all \eqn{K}
+  \item{pdfs.FLC}{\eqn{N \times K} matrix of all \eqn{K}
   state-conditional FLC densities evaluated at each FLC
   \eqn{\ell^{+}_i}, \eqn{i=1, \ldots, N} (only necessary if
   \code{distance = function(f, g) return(...)}).}
@@ -76,10 +75,10 @@ estimate_state_adj_matrix(state_vector = NULL, FLCs = NULL, FLC_pdfs = NULL,
 WW <- matrix(runif(10000), ncol = 10)
 WW <- normalize(WW)
 temp_flcs <- cbind(rnorm(nrow(WW)))
-temp_flc_pdfs <- estimate_LC_pdfs(temp_flcs, WW)
-AA_ks <- estimate_state_adj_matrix(state_vector = weight_matrix2states(WW), 
-    FLCs = temp_flcs, distance = "KS")
-AA_L1 <- estimate_state_adj_matrix(FLC_pdfs = temp_flc_pdfs)
+temp_pdfs.FLC <- estimate_LC_pdfs(temp_flcs, WW)
+AA_ks <- estimate_state_adj_matrix(states = weight_matrix2states(WW), FLCs = temp_flcs, 
+    distance = "KS")
+AA_L1 <- estimate_state_adj_matrix(pdfs.FLC = temp_pdfs.FLC)
 
 par(mfrow = c(1, 2), mar = c(1, 1, 2, 1))
 image2(AA_ks, zlim = c(0, 1), legend = FALSE, main = "Kolmogorov-Smirnov")
