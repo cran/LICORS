@@ -74,10 +74,12 @@ kmeanspp <- function(data, k = 2,
       center_ids[ii] <- sample.int(num.samples, 1, prob = probs)
     }
     
-    tmp.out <- kmeans(data, centers = data[center_ids, ], iter.max = iter.max, ...)
-    tmp.out$inicial.centers <- data[center_ids, ]
-    if (tmp.out$tot.withinss < out$tot.withinss){
-      out <- tmp.out
+    if(sum(duplicated(data[center_ids, ]))==0){
+      tmp.out <- kmeans(data, centers = data[center_ids, ], iter.max = iter.max, ...)
+      tmp.out$inicial.centers <- data[center_ids, ]
+      if (tmp.out$tot.withinss < out$tot.withinss){
+        out <- tmp.out
+      }
     }
   } 
   invisible(out)
