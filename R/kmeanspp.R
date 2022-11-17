@@ -62,14 +62,17 @@ kmeanspp <- function(data, k = 2,
       center_ids[1:2] = start
     }
     for (ii in 2:kk) { # the plus-plus step in kmeans
-      if (ndim == 1){
-        dists <- apply(cbind(data[center_ids, ]), 1, 
-                       function(center) {rowSums((data - center)^2)})
-      } else {
-        dists <- apply(data[center_ids, ], 1, 
-                       function(center) {rowSums((data - center)^2)})
+      if (ndim == 1) {
+          dists <- apply(cbind(data[center_ids, ]), 1, 
+            function(center) {
+              rowSums((data - rep(center,each=nrow(data) ) )^2) # fixed
+            })
       }
-      probs <- apply(dists, 1, min)
+      else {
+          dists <- apply(data[center_ids, ], 1, function(center) {
+            rowSums((data - rep(center,each=nrow(data) ) )^2) # fixed
+          })
+      }      probs <- apply(dists, 1, min)
       probs[center_ids] <- 0
       center_ids[ii] <- sample.int(num.samples, 1, prob = probs)
     }
